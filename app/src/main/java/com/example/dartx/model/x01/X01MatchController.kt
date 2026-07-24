@@ -51,12 +51,23 @@ class X01MatchController(
 
     val currentPlayerId: Long get() = order[turnIndex]
 
+    /** State the current player's turn starts from — lets the UI preview a turn dart by dart. */
+    fun currentTurnStart(): TurnStartState =
+        TurnStartState(remaining.getValue(currentPlayerId), isIn.getValue(currentPlayerId))
+
     fun applyTurn(darts: List<Dart>): X01TurnOutcome {
         check(matchWinner == null) { "Match already finished" }
+        return commit(X01Engine.applyTurn(currentTurnStart(), darts, outRule, inRule))
+    }
 
+    /** Fast entry variant — see [X01Engine.applyTurnTotal] for what the total can and cannot prove. */
+    fun applyTurnTotal(total: Int): X01TurnOutcome {
+        check(matchWinner == null) { "Match already finished" }
+        return commit(X01Engine.applyTurnTotal(currentTurnStart(), total, outRule, inRule))
+    }
+
+    private fun commit(result: TurnResult): X01TurnOutcome {
         val playerId = currentPlayerId
-        val start = TurnStartState(remaining.getValue(playerId), isIn.getValue(playerId))
-        val result = X01Engine.applyTurn(start, darts, outRule, inRule)
 
         remaining[playerId] = result.remainingAfter
         isIn[playerId] = result.isPlayerInAfter
@@ -97,4 +108,7 @@ class X01MatchController(
     fun remainingFor(playerId: Long): Int = remaining.getValue(playerId)
     fun legWinsFor(playerId: Long): Int = legWins.getValue(playerId)
     fun setWinsFor(playerId: Long): Int = setWins.getValue(playerId)
+
+    /** Whether [playerId] has satisfied the in rule (always true under straight in). */
+    fun isInFor(playerId: Long): Boolean = isIn.getValue(playerId)
 }

@@ -160,6 +160,65 @@ class X01EngineTest {
     }
 
     @Test
+    fun `a miss scores nothing and never satisfies double in`() {
+        val start = TurnStartState(remaining = 100, isPlayerIn = false)
+        val darts = listOf(Dart.MISS, Dart.MISS, Dart.MISS)
+
+        val result = X01Engine.applyTurn(start, darts, OutRule.DOUBLE_OUT, InRule.DOUBLE_IN)
+
+        assertEquals(100, result.remainingAfter)
+        assertFalse(result.isPlayerInAfter)
+    }
+
+    @Test
+    fun `turn total subtracts from the remaining score`() {
+        val start = TurnStartState(remaining = 501, isPlayerIn = true)
+
+        val result = X01Engine.applyTurnTotal(start, 140, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN)
+
+        assertEquals(TurnResult.Outcome.NORMAL, result.outcome)
+        assertEquals(361, result.remainingAfter)
+    }
+
+    @Test
+    fun `turn total overshooting or leaving one is a bust`() {
+        val start = TurnStartState(remaining = 30, isPlayerIn = true)
+
+        assertEquals(
+            TurnResult.Outcome.BUST,
+            X01Engine.applyTurnTotal(start, 40, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN).outcome
+        )
+        assertEquals(
+            TurnResult.Outcome.BUST,
+            X01Engine.applyTurnTotal(start, 29, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN).outcome
+        )
+    }
+
+    @Test
+    fun `turn total reaching zero is taken as a legal finish`() {
+        val start = TurnStartState(remaining = 40, isPlayerIn = true)
+
+        // The fields are unknown, so the player asserts the double themselves.
+        val result = X01Engine.applyTurnTotal(start, 40, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN)
+
+        assertEquals(TurnResult.Outcome.CHECKOUT, result.outcome)
+        assertEquals(0, result.remainingAfter)
+    }
+
+    @Test
+    fun `turn total under double in gets the player in only when they scored`() {
+        val start = TurnStartState(remaining = 100, isPlayerIn = false)
+
+        val scored = X01Engine.applyTurnTotal(start, 60, OutRule.DOUBLE_OUT, InRule.DOUBLE_IN)
+        assertTrue(scored.isPlayerInAfter)
+        assertEquals(40, scored.remainingAfter)
+
+        val blank = X01Engine.applyTurnTotal(start, 0, OutRule.DOUBLE_OUT, InRule.DOUBLE_IN)
+        assertFalse(blank.isPlayerInAfter)
+        assertEquals(100, blank.remainingAfter)
+    }
+
+    @Test
     fun `checkout mid turn stops processing further darts`() {
         val start = TurnStartState(remaining = 40, isPlayerIn = true)
         val darts = listOf(d(20, Multiplier.DOUBLE), d(20, Multiplier.TRIPLE), d(20, Multiplier.TRIPLE))

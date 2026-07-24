@@ -87,6 +87,29 @@ class X01MatchControllerTest {
     }
 
     @Test
+    fun `turn totals drive the match the same way individual darts do`() {
+        val controller = X01MatchController(
+            playerIds = listOf(1L, 2L),
+            startPoints = 100,
+            outRule = OutRule.DOUBLE_OUT,
+            inRule = InRule.STRAIGHT_IN,
+            setLegMode = SetLegMode.FIRST_TO,
+            setsTarget = 1,
+            legsTarget = 1
+        )
+
+        controller.applyTurnTotal(60)
+        assertEquals(40, controller.remainingFor(1L))
+        assertEquals(2L, controller.currentPlayerId)
+
+        controller.applyTurnTotal(0)
+        val outcome = controller.applyTurnTotal(40)
+
+        assertEquals(1L, outcome.legWonBy)
+        assertEquals(1L, controller.matchWinner)
+    }
+
+    @Test
     fun `bust does not end the leg and passes the turn on`() {
         val controller = X01MatchController(
             playerIds = listOf(1L, 2L, 3L),

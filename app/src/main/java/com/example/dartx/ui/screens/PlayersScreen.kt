@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -30,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,12 +39,10 @@ import com.example.dartx.data.local.Player
 import com.example.dartx.viewmodel.PlayerViewModel
 import com.example.dartx.viewmodel.PlayerViewModelFactory
 
-private val avatarColorOptions = listOf(
-    "#EF5350", "#42A5F5", "#66BB6A", "#FFA726", "#AB47BC", "#26C6DA"
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayersScreen(
+    onBack: () -> Unit,
     viewModel: PlayerViewModel = viewModel(
         factory = PlayerViewModelFactory(LocalContext.current)
     )
@@ -53,17 +51,15 @@ fun PlayersScreen(
     var nameInput by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf(avatarColorOptions.first()) }
 
-    Scaffold { innerPadding ->
+    Scaffold(
+        topBar = { BackTopBar(title = "Players", onBack = onBack) }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            Text(text = "Players", style = MaterialTheme.typography.headlineSmall)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             OutlinedTextField(
                 value = nameInput,
                 onValueChange = { nameInput = it },
@@ -139,5 +135,3 @@ private fun PlayerRow(player: Player, onDelete: () -> Unit) {
         }
     }
 }
-
-private fun parseHexColor(hex: String): Color = Color(android.graphics.Color.parseColor(hex))
