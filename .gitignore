@@ -1,12 +1,7 @@
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+/.idea/
 .DS_Store
 /build
 /captures
@@ -17,5 +12,6 @@ local.properties
 # Local working docs and AI tooling — kept on disk, out of version control
 CLAUDE.md
 DEVLOG.md
+KOD_OBJASNJEN.md
 KORACI_RAZVOJA.md
 .claude/
