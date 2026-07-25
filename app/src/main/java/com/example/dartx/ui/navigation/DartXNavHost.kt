@@ -1,6 +1,9 @@
 package com.example.dartx.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -8,8 +11,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.dartx.ui.screens.HomeScreen
 import com.example.dartx.ui.screens.LiveMatchScreen
+import com.example.dartx.ui.screens.MatchSettingsScreen
 import com.example.dartx.ui.screens.MatchSetupScreen
 import com.example.dartx.ui.screens.PlayersScreen
+import com.example.dartx.viewmodel.LiveMatchViewModelFactory
 
 object Routes {
     const val HOME = "home"
@@ -17,8 +22,11 @@ object Routes {
     const val SETUP = "setup"
     const val MATCH_ID_ARG = "matchId"
     const val LIVE_MATCH = "match/{$MATCH_ID_ARG}"
+    const val MATCH_SETTINGS = "match/{$MATCH_ID_ARG}/settings"
 
     fun liveMatch(matchId: Long) = "match/$matchId"
+
+    fun matchSettings(matchId: Long) = "match/$matchId/settings"
 }
 
 @Composable
@@ -60,7 +68,27 @@ fun DartXNavHost() {
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.HOME) { inclusive = true }
                     }
-                }
+                },
+                onOpenSettings = { navController.navigate(Routes.matchSettings(matchId)) }
+            )
+        }
+
+        composable(
+            route = Routes.MATCH_SETTINGS,
+            arguments = listOf(navArgument(Routes.MATCH_ID_ARG) { type = NavType.LongType })
+        ) { backStackEntry ->
+            val matchId = backStackEntry.arguments?.getLong(Routes.MATCH_ID_ARG) ?: return@composable
+            // Scope the ViewModel to the live match entry rather than to this one, so settings
+            // changes reach the match in progress instead of a second, throwaway controller.
+            val matchEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Routes.liveMatch(matchId))
+            }
+            MatchSettingsScreen(
+                viewModel = viewModel(
+                    viewModelStoreOwner = matchEntry,
+                    factory = LiveMatchViewModelFactory(LocalContext.current, matchId)
+                ),
+                onBack = { navController.popBackStack() }
             )
         }
     }

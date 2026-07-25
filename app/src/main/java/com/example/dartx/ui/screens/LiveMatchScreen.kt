@@ -17,12 +17,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -57,6 +61,7 @@ import com.example.dartx.viewmodel.ScoreInputMode
 fun LiveMatchScreen(
     matchId: Long,
     onExit: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: LiveMatchViewModel = viewModel(
         factory = LiveMatchViewModelFactory(LocalContext.current, matchId)
     )
@@ -64,7 +69,17 @@ fun LiveMatchScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { BackTopBar(title = state.match?.let(::matchTitle) ?: "Match", onBack = onExit) }
+        topBar = {
+            BackTopBar(
+                title = state.match?.let(::matchTitle) ?: "Match",
+                onBack = onExit,
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Match settings")
+                    }
+                }
+            )
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -109,11 +124,6 @@ fun LiveMatchScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
-                    )
-
-                    InputModeSelector(
-                        mode = state.inputMode,
-                        onModeChange = viewModel::setInputMode
                     )
 
                     when (state.inputMode) {
@@ -184,25 +194,6 @@ private fun ScoreboardRow(board: PlayerBoard, displayedRemaining: Int, showInFla
                 fontWeight = FontWeight.Bold
             )
         }
-    }
-}
-
-@Composable
-private fun InputModeSelector(mode: ScoreInputMode, onModeChange: (ScoreInputMode) -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(horizontal = 16.dp)
-    ) {
-        FilterChip(
-            selected = mode == ScoreInputMode.TURN_TOTAL,
-            onClick = { onModeChange(ScoreInputMode.TURN_TOTAL) },
-            label = { Text("Turn total") }
-        )
-        FilterChip(
-            selected = mode == ScoreInputMode.PER_DART,
-            onClick = { onModeChange(ScoreInputMode.PER_DART) },
-            label = { Text("Per dart") }
-        )
     }
 }
 

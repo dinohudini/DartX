@@ -287,19 +287,3 @@ private fun gameModeLabel(mode: GameMode): String = when (mode) {
     GameMode.CRICKET -> "Cricket (phase 2)"
     GameMode.SPLIT -> "Split (phase 2)"
 }
-
-private fun outRuleLabel(rule: OutRule): String = when (rule) {
-    OutRule.DOUBLE_OUT -> "Double out"
-    OutRule.MASTER_OUT -> "Master out"
-    OutRule.SINGLE_OUT -> "Single out"
-}
-
-private fun inRuleLabel(rule: InRule): String = when (rule) {
-    InRule.STRAIGHT_IN -> "Straight in"
-    InRule.DOUBLE_IN -> "Double in"
-}
-
-private fun setLegModeLabel(mode: SetLegMode): String = when (mode) {
-    SetLegMode.FIRST_TO -> "First to"
-    SetLegMode.BEST_OF -> "Best of"
-}
