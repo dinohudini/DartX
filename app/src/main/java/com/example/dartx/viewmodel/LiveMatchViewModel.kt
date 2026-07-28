@@ -204,7 +204,7 @@ class LiveMatchViewModel(
                 rows.forEach { matchRepository.recordThrow(it) }
                 if (winner != null) {
                     match?.let { m ->
-                        val completed = m.copy(
+                        val completed = withFinalScore(m).copy(
                             winnerPlayerId = winner.id,
                             completedAt = System.currentTimeMillis()
                         )
@@ -214,6 +214,20 @@ class LiveMatchViewModel(
                 }
             }
         }
+    }
+
+    /**
+     * Snapshots the final score onto the match row, so the history screen can render a result
+     * without replaying every throw. Scores stay parallel to `participantIds`; a participant the
+     * controller does not know (deleted between matches) scores 0 rather than shifting the list.
+     */
+    private fun withFinalScore(match: Match): Match {
+        val controller = controller ?: return match
+        val playing = players.map { it.id }.toSet()
+        return match.copy(
+            setWins = match.participantIds.map { if (it in playing) controller.setWinsFor(it) else 0 },
+            legWins = match.participantIds.map { if (it in playing) controller.totalLegWinsFor(it) else 0 }
+        )
     }
 
     private fun messageFor(outcome: X01TurnOutcome, scored: Int): String {

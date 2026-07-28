@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.dartx.ui.screens.HomeScreen
 import com.example.dartx.ui.screens.LiveMatchScreen
+import com.example.dartx.ui.screens.MatchHistoryScreen
 import com.example.dartx.ui.screens.MatchSettingsScreen
 import com.example.dartx.ui.screens.MatchSetupScreen
 import com.example.dartx.ui.screens.PlayersScreen
@@ -19,6 +20,7 @@ import com.example.dartx.viewmodel.LiveMatchViewModelFactory
 object Routes {
     const val HOME = "home"
     const val PLAYERS = "players"
+    const val HISTORY = "history"
     const val SETUP = "setup"
     const val MATCH_ID_ARG = "matchId"
     const val LIVE_MATCH = "match/{$MATCH_ID_ARG}"
@@ -37,12 +39,17 @@ fun DartXNavHost() {
         composable(Routes.HOME) {
             HomeScreen(
                 onPlay = { navController.navigate(Routes.SETUP) },
-                onPlayers = { navController.navigate(Routes.PLAYERS) }
+                onPlayers = { navController.navigate(Routes.PLAYERS) },
+                onHistory = { navController.navigate(Routes.HISTORY) }
             )
         }
 
         composable(Routes.PLAYERS) {
             PlayersScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.HISTORY) {
+            MatchHistoryScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.SETUP) {

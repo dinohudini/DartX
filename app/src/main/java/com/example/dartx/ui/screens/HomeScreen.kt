@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeScreen(onPlay: () -> Unit, onPlayers: () -> Unit) {
+fun HomeScreen(onPlay: () -> Unit, onPlayers: () -> Unit, onHistory: () -> Unit) {
     Scaffold { innerPadding ->
         Column(
             modifier = Modifier
@@ -40,6 +40,12 @@ fun HomeScreen(onPlay: () -> Unit, onPlayers: () -> Unit) {
 
             OutlinedButton(onClick = onPlayers, modifier = Modifier.fillMaxWidth()) {
                 Text("Players")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(onClick = onHistory, modifier = Modifier.fillMaxWidth()) {
+                Text("Match history")
             }
         }
     }

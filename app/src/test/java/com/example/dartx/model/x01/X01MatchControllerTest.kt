@@ -59,6 +59,33 @@ class X01MatchControllerTest {
     }
 
     @Test
+    fun `total leg wins survive the reset that clinching a set performs`() {
+        val controller = X01MatchController(
+            playerIds = listOf(1L, 2L),
+            startPoints = 40,
+            outRule = OutRule.DOUBLE_OUT,
+            inRule = InRule.STRAIGHT_IN,
+            setLegMode = SetLegMode.FIRST_TO,
+            setsTarget = 2,
+            legsTarget = 2
+        )
+
+        // Player 1 takes both sets 2-0, so four legs in total.
+        repeat(4) {
+            while (controller.currentPlayerId != 1L) {
+                controller.applyTurn(listOf(d(1, Multiplier.SINGLE)))
+            }
+            controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
+        }
+
+        assertEquals(1L, controller.matchWinner)
+        assertEquals(2, controller.setWinsFor(1L))
+        assertEquals(0, controller.legWinsFor(1L)) // reset by the set win
+        assertEquals(4, controller.totalLegWinsFor(1L))
+        assertEquals(0, controller.totalLegWinsFor(2L))
+    }
+
+    @Test
     fun `best of 5 legs is equivalent to first to 3`() {
         val bestOf = X01MatchController(
             playerIds = listOf(1L, 2L),

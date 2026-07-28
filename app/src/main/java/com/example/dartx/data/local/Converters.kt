@@ -17,6 +17,13 @@ class Converters {
         if (value.isEmpty()) emptyList() else value.split(",").map { it.toLong() }
 
     @TypeConverter
+    fun fromScores(scores: List<Int>): String = scores.joinToString(",")
+
+    @TypeConverter
+    fun toScores(value: String): List<Int> =
+        if (value.isEmpty()) emptyList() else value.split(",").map { it.toInt() }
+
+    @TypeConverter
     fun fromGameMode(mode: GameMode): String = mode.name
 
     @TypeConverter

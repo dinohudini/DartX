@@ -19,6 +19,13 @@ data class Match(
     val setsTarget: Int,
     val legsTarget: Int,
     val participantIds: List<Long>,
+    /**
+     * Final score, written once when the match is won, and empty until then — both lists are
+     * parallel to [participantIds]. [legWins] counts legs over the whole match, not just the
+     * last set, because per-set leg counts reset every time a set is clinched.
+     */
+    val setWins: List<Int> = emptyList(),
+    val legWins: List<Int> = emptyList(),
     val winnerPlayerId: Long? = null,
     val tournamentId: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),

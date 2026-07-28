@@ -40,6 +40,7 @@ class X01MatchController(
 
     private val setWins = order.associateWith { 0 }.toMutableMap()
     private val legWins = order.associateWith { 0 }.toMutableMap()
+    private val totalLegWins = order.associateWith { 0 }.toMutableMap()
     private val remaining = order.associateWith { startPoints }.toMutableMap()
     private val isIn = order.associateWith { false }.toMutableMap()
 
@@ -78,6 +79,7 @@ class X01MatchController(
         if (result.outcome == TurnResult.Outcome.CHECKOUT) {
             legWonBy = playerId
             legWins[playerId] = legWins.getValue(playerId) + 1
+            totalLegWins[playerId] = totalLegWins.getValue(playerId) + 1
 
             if (legWins.getValue(playerId) >= legWinsNeeded) {
                 setWonBy = playerId
@@ -106,7 +108,13 @@ class X01MatchController(
     }
 
     fun remainingFor(playerId: Long): Int = remaining.getValue(playerId)
+
+    /** Legs won in the set being played — reset every time someone clinches a set. */
     fun legWinsFor(playerId: Long): Int = legWins.getValue(playerId)
+
+    /** Legs won over the whole match, which is what a finished match's score line reports. */
+    fun totalLegWinsFor(playerId: Long): Int = totalLegWins.getValue(playerId)
+
     fun setWinsFor(playerId: Long): Int = setWins.getValue(playerId)
 
     /** Whether [playerId] has satisfied the in rule (always true under straight in). */
