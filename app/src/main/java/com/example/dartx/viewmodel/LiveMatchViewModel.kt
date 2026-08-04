@@ -15,10 +15,12 @@ import com.example.dartx.model.x01.X01TurnOutcome
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /** The two entry modes from the spec: a bare turn total, or every dart individually. */
 enum class ScoreInputMode { TURN_TOTAL, PER_DART }
@@ -29,7 +31,8 @@ data class PlayerBoard(
     val legWins: Int,
     val setWins: Int,
     val isCurrentPlayer: Boolean,
-    val isIn: Boolean
+    val isIn: Boolean,
+    val threeDartAverage: Double?
 )
 
 data class LiveMatchUiState(
@@ -64,6 +67,9 @@ class LiveMatchViewModel(
 
     /** Turn counter per player, so [Throw.turnNumber] groups the darts of one turn together. */
     private val turnNumbers = mutableMapOf<Long, Int>()
+
+    private val pointsScored = mutableMapOf<Long, Int>()
+    private val dartsThrown = mutableMapOf<Long, Int>()
 
     /** Keeps concurrent turns from interleaving their inserts, so throw ids stay in throw order. */
     private val writeLock = Mutex()
@@ -149,19 +155,22 @@ class LiveMatchViewModel(
         val controller = controller ?: return
         val scoreBefore = controller.currentTurnStart().remaining
         val outcome = controller.applyTurn(darts)
+        val result = outcome.turnResult
         val turnNumber = nextTurnNumber(outcome.playerId)
 
-        val rows = darts.map { dart ->
+        val rows = darts.take(result.dartsThrown).mapIndexed { index, dart ->
             Throw(
                 matchId = matchId,
                 playerId = outcome.playerId,
                 turnNumber = turnNumber,
                 fieldValue = dart.fieldValue,
                 multiplier = dart.multiplier,
-                score = dart.score
+                score = dart.score,
+                legNumber = outcome.legNumber,
+                status = result.throwStatuses[index]
             )
         }
-        publish(outcome, scored = scoreBefore - controller.remainingFor(outcome.playerId), rows = rows)
+        publish(outcome, scored = scoreBefore - result.remainingAfter, rows = rows)
     }
 
     fun submitTurnTotal(total: Int) {
@@ -174,6 +183,7 @@ class LiveMatchViewModel(
 
         val scoreBefore = controller.currentTurnStart().remaining
         val outcome = controller.applyTurnTotal(total)
+        val result = outcome.turnResult
         val row = Throw(
             matchId = matchId,
             playerId = outcome.playerId,
@@ -181,13 +191,19 @@ class LiveMatchViewModel(
             // Fast entry knows the total but not the fields, which is exactly the generic row.
             fieldValue = null,
             multiplier = null,
-            score = total
+            score = total,
+            legNumber = outcome.legNumber,
+            status = result.throwStatuses.first()
         )
-        publish(outcome, scored = scoreBefore - controller.remainingFor(outcome.playerId), rows = listOf(row))
+        publish(outcome, scored = scoreBefore - result.remainingAfter, rows = listOf(row))
     }
 
     private fun publish(outcome: X01TurnOutcome, scored: Int, rows: List<Throw>) {
         val winner = outcome.matchWonBy?.let { id -> players.first { it.id == id } }
+
+        pointsScored[outcome.playerId] = (pointsScored[outcome.playerId] ?: 0) + scored
+        dartsThrown[outcome.playerId] =
+            (dartsThrown[outcome.playerId] ?: 0) + outcome.turnResult.dartsThrown
 
         _uiState.update {
             it.copy(
@@ -200,16 +216,18 @@ class LiveMatchViewModel(
         }
 
         viewModelScope.launch {
-            writeLock.withLock {
-                rows.forEach { matchRepository.recordThrow(it) }
-                if (winner != null) {
-                    match?.let { m ->
-                        val completed = withFinalScore(m).copy(
-                            winnerPlayerId = winner.id,
-                            completedAt = System.currentTimeMillis()
-                        )
-                        matchRepository.updateMatch(completed)
-                        match = completed
+            withContext(NonCancellable) {
+                writeLock.withLock {
+                    rows.forEach { matchRepository.recordThrow(it) }
+                    if (winner != null) {
+                        match?.let { m ->
+                            val completed = withFinalScore(m).copy(
+                                winnerPlayerId = winner.id,
+                                completedAt = System.currentTimeMillis()
+                            )
+                            matchRepository.updateMatch(completed)
+                            match = completed
+                        }
                     }
                 }
             }
@@ -260,8 +278,15 @@ class LiveMatchViewModel(
                 legWins = controller.legWinsFor(player.id),
                 setWins = controller.setWinsFor(player.id),
                 isCurrentPlayer = controller.matchWinner == null && player.id == controller.currentPlayerId,
-                isIn = controller.isInFor(player.id)
+                isIn = controller.isInFor(player.id),
+                threeDartAverage = threeDartAverageFor(player.id)
             )
         }
+    }
+
+    private fun threeDartAverageFor(playerId: Long): Double? {
+        val darts = dartsThrown[playerId] ?: 0
+        if (darts == 0) return null
+        return (pointsScored[playerId] ?: 0) * 3.0 / darts
     }
 }

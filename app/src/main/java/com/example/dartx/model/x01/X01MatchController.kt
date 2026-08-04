@@ -8,6 +8,7 @@ import com.example.dartx.model.SetLegMode
 data class X01TurnOutcome(
     val playerId: Long,
     val turnResult: TurnResult,
+    val legNumber: Int = 1,
     val legWonBy: Long? = null,
     val setWonBy: Long? = null,
     val matchWonBy: Long? = null
@@ -46,6 +47,7 @@ class X01MatchController(
 
     private var legStartIndex = 0
     private var turnIndex = 0
+    private var legNumber = 1
 
     var matchWinner: Long? = null
         private set
@@ -69,6 +71,7 @@ class X01MatchController(
 
     private fun commit(result: TurnResult): X01TurnOutcome {
         val playerId = currentPlayerId
+        val turnLegNumber = legNumber
 
         remaining[playerId] = result.remainingAfter
         isIn[playerId] = result.isPlayerInAfter
@@ -94,6 +97,7 @@ class X01MatchController(
             order.forEach { remaining[it] = startPoints; isIn[it] = false }
             legStartIndex = (legStartIndex + 1) % order.size
             turnIndex = legStartIndex
+            legNumber += 1
         } else {
             turnIndex = (turnIndex + 1) % order.size
         }
@@ -101,6 +105,7 @@ class X01MatchController(
         return X01TurnOutcome(
             playerId = playerId,
             turnResult = result,
+            legNumber = turnLegNumber,
             legWonBy = legWonBy,
             setWonBy = setWonBy,
             matchWonBy = matchWinner

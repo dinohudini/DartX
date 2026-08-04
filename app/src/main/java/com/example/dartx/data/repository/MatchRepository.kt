@@ -19,6 +19,8 @@ class MatchRepository(
 
     suspend fun getMatchById(matchId: Long): Match? = matchDao.getMatchById(matchId)
 
+    fun observeMatchById(matchId: Long): Flow<Match?> = matchDao.observeMatchById(matchId)
+
     suspend fun recordThrow(throwEntry: Throw): Long = throwDao.insert(throwEntry)
 
     fun getThrowsForMatch(matchId: Long): Flow<List<Throw>> = throwDao.getThrowsForMatch(matchId)

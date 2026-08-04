@@ -3,6 +3,7 @@ package com.example.dartx.model.x01
 import com.example.dartx.model.Dart
 import com.example.dartx.model.InRule
 import com.example.dartx.model.OutRule
+import com.example.dartx.model.ThrowStatus
 
 data class TurnStartState(val remaining: Int, val isPlayerIn: Boolean)
 
@@ -10,7 +11,8 @@ data class TurnResult(
     val remainingAfter: Int,
     val isPlayerInAfter: Boolean,
     val dartsThrown: Int,
-    val outcome: Outcome
+    val outcome: Outcome,
+    val throwStatuses: List<ThrowStatus> = emptyList()
 ) {
     enum class Outcome { NORMAL, BUST, CHECKOUT }
 }
@@ -38,6 +40,7 @@ object X01Engine {
         var remaining = start.remaining
         var isIn = start.isPlayerIn
         var becameInThisTurn = false
+        val statuses = mutableListOf<ThrowStatus>()
 
         for ((index, dart) in darts.withIndex()) {
             if (!isIn) {
@@ -48,9 +51,12 @@ object X01Engine {
                     becameInThisTurn = true
                 } else {
                     // Double-in not yet achieved: dart is thrown but doesn't count.
+                    statuses += ThrowStatus.NOT_IN
                     continue
                 }
             }
+
+            statuses += ThrowStatus.COUNTED
 
             val newRemaining = remaining - dart.score
             val leavesUnfinishableOne = newRemaining == 1 && outRule != OutRule.SINGLE_OUT
@@ -62,7 +68,8 @@ object X01Engine {
                     remainingAfter = start.remaining,
                     isPlayerInAfter = start.isPlayerIn || becameInThisTurn,
                     dartsThrown = index + 1,
-                    outcome = TurnResult.Outcome.BUST
+                    outcome = TurnResult.Outcome.BUST,
+                    throwStatuses = List(index + 1) { ThrowStatus.BUST }
                 )
             }
 
@@ -77,14 +84,16 @@ object X01Engine {
                         remainingAfter = 0,
                         isPlayerInAfter = true,
                         dartsThrown = index + 1,
-                        outcome = TurnResult.Outcome.CHECKOUT
+                        outcome = TurnResult.Outcome.CHECKOUT,
+                        throwStatuses = statuses.toList()
                     )
                 } else {
                     TurnResult(
                         remainingAfter = start.remaining,
                         isPlayerInAfter = start.isPlayerIn || becameInThisTurn,
                         dartsThrown = index + 1,
-                        outcome = TurnResult.Outcome.BUST
+                        outcome = TurnResult.Outcome.BUST,
+                        throwStatuses = List(index + 1) { ThrowStatus.BUST }
                     )
                 }
             }
@@ -96,7 +105,8 @@ object X01Engine {
             remainingAfter = remaining,
             isPlayerInAfter = isIn,
             dartsThrown = darts.size,
-            outcome = TurnResult.Outcome.NORMAL
+            outcome = TurnResult.Outcome.NORMAL,
+            throwStatuses = statuses.toList()
         )
     }
 
@@ -118,7 +128,10 @@ object X01Engine {
 
         val isInAfter = start.isPlayerIn || inRule == InRule.STRAIGHT_IN || total > 0
         if (!isInAfter) {
-            return TurnResult(start.remaining, false, NOMINAL_DARTS_PER_TURN, TurnResult.Outcome.NORMAL)
+            return TurnResult(
+                start.remaining, false, NOMINAL_DARTS_PER_TURN, TurnResult.Outcome.NORMAL,
+                listOf(ThrowStatus.NOT_IN)
+            )
         }
 
         val newRemaining = start.remaining - total
@@ -126,13 +139,22 @@ object X01Engine {
 
         return when {
             newRemaining < 0 || leavesUnfinishableOne ->
-                TurnResult(start.remaining, isInAfter, NOMINAL_DARTS_PER_TURN, TurnResult.Outcome.BUST)
+                TurnResult(
+                    start.remaining, isInAfter, NOMINAL_DARTS_PER_TURN, TurnResult.Outcome.BUST,
+                    listOf(ThrowStatus.BUST)
+                )
 
             newRemaining == 0 ->
-                TurnResult(0, true, NOMINAL_DARTS_PER_TURN, TurnResult.Outcome.CHECKOUT)
+                TurnResult(
+                    0, true, NOMINAL_DARTS_PER_TURN, TurnResult.Outcome.CHECKOUT,
+                    listOf(ThrowStatus.COUNTED)
+                )
 
             else ->
-                TurnResult(newRemaining, isInAfter, NOMINAL_DARTS_PER_TURN, TurnResult.Outcome.NORMAL)
+                TurnResult(
+                    newRemaining, isInAfter, NOMINAL_DARTS_PER_TURN, TurnResult.Outcome.NORMAL,
+                    listOf(ThrowStatus.COUNTED)
+                )
         }
     }
 }

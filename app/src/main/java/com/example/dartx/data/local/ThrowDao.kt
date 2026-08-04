@@ -14,6 +14,6 @@ interface ThrowDao {
     @Query("SELECT * FROM throws WHERE matchId = :matchId ORDER BY turnNumber ASC, id ASC")
     fun getThrowsForMatch(matchId: Long): Flow<List<Throw>>
 
-    @Query("SELECT * FROM throws WHERE playerId = :playerId ORDER BY timestamp ASC")
+    @Query("SELECT * FROM throws WHERE playerId = :playerId ORDER BY matchId ASC, turnNumber ASC, id ASC")
     fun getThrowsForPlayer(playerId: Long): Flow<List<Throw>>
 }

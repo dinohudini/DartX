@@ -6,6 +6,7 @@ import com.example.dartx.model.InRule
 import com.example.dartx.model.Multiplier
 import com.example.dartx.model.OutRule
 import com.example.dartx.model.SetLegMode
+import com.example.dartx.model.ThrowStatus
 
 class Converters {
 
@@ -52,4 +53,10 @@ class Converters {
 
     @TypeConverter
     fun toMultiplier(value: String?): Multiplier? = value?.let { Multiplier.valueOf(it) }
+
+    @TypeConverter
+    fun fromThrowStatus(status: ThrowStatus): String = status.name
+
+    @TypeConverter
+    fun toThrowStatus(value: String): ThrowStatus = ThrowStatus.valueOf(value)
 }

@@ -137,6 +137,50 @@ class X01MatchControllerTest {
     }
 
     @Test
+    fun `the turn that wins a leg reports the leg it belonged to`() {
+        val controller = X01MatchController(
+            playerIds = listOf(1L, 2L),
+            startPoints = 40,
+            outRule = OutRule.DOUBLE_OUT,
+            inRule = InRule.STRAIGHT_IN,
+            setLegMode = SetLegMode.FIRST_TO,
+            setsTarget = 1,
+            legsTarget = 3
+        )
+
+        assertEquals(1, controller.applyTurn(listOf(d(1, Multiplier.SINGLE))).legNumber)
+
+        val winning = controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
+        assertEquals(2L, winning.legWonBy)
+        assertEquals(1, winning.legNumber)
+
+        assertEquals(2, controller.applyTurn(listOf(d(1, Multiplier.SINGLE))).legNumber)
+    }
+
+    @Test
+    fun `leg numbering does not restart when a set is clinched`() {
+        val controller = X01MatchController(
+            playerIds = listOf(1L, 2L),
+            startPoints = 40,
+            outRule = OutRule.DOUBLE_OUT,
+            inRule = InRule.STRAIGHT_IN,
+            setLegMode = SetLegMode.FIRST_TO,
+            setsTarget = 2,
+            legsTarget = 2
+        )
+
+        val legNumbers = mutableListOf<Int>()
+        repeat(4) {
+            while (controller.currentPlayerId != 1L) {
+                controller.applyTurn(listOf(d(1, Multiplier.SINGLE)))
+            }
+            legNumbers += controller.applyTurn(listOf(d(20, Multiplier.DOUBLE))).legNumber
+        }
+
+        assertEquals(listOf(1, 2, 3, 4), legNumbers)
+    }
+
+    @Test
     fun `bust does not end the leg and passes the turn on`() {
         val controller = X01MatchController(
             playerIds = listOf(1L, 2L, 3L),

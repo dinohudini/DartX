@@ -31,18 +31,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dartx.data.local.Match
-import com.example.dartx.model.GameMode
 import com.example.dartx.viewmodel.HistoryParticipant
 import com.example.dartx.viewmodel.MatchHistoryEntry
 import com.example.dartx.viewmodel.MatchHistoryViewModel
 import com.example.dartx.viewmodel.MatchHistoryViewModelFactory
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun MatchHistoryScreen(
     onBack: () -> Unit,
+    onOpenStats: (Long) -> Unit,
     viewModel: MatchHistoryViewModel = viewModel(
         factory = MatchHistoryViewModelFactory(LocalContext.current)
     )
@@ -72,7 +69,7 @@ fun MatchHistoryScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(state.entries, key = { it.match.id }) { entry ->
-                        MatchHistoryCard(entry)
+                        MatchHistoryCard(entry, onOpenStats = { onOpenStats(entry.match.id) })
                     }
                 }
             }
@@ -81,47 +78,58 @@ fun MatchHistoryScreen(
 }
 
 @Composable
-private fun MatchHistoryCard(entry: MatchHistoryEntry) {
+private fun MatchHistoryCard(entry: MatchHistoryEntry, onOpenStats: () -> Unit) {
+    if (entry.isFinished) {
+        OutlinedCard(onClick = onOpenStats, modifier = Modifier.fillMaxWidth()) {
+            MatchHistoryCardBody(entry)
+        }
+    } else {
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+            MatchHistoryCardBody(entry)
+        }
+    }
+}
+
+@Composable
+private fun MatchHistoryCardBody(entry: MatchHistoryEntry) {
     val match = entry.match
     // Sets are only worth reporting when the match was actually played over more than one.
     val decidedBySets = match.setLegMode.winsNeeded(match.setsTarget) > 1
 
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = titleOf(match), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = formatTimestamp(match.completedAt ?: match.createdAt),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.size(12.dp))
-
-            entry.participants.forEach { participant ->
-                ParticipantRow(
-                    participant = participant,
-                    score = if (decidedBySets) participant.setWins else participant.legWins
-                )
-            }
-
-            Spacer(modifier = Modifier.size(12.dp))
-
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = titleOf(match), style = MaterialTheme.typography.titleMedium)
             Text(
-                text = subtitleOf(match, decidedBySets, entry.isFinished),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (entry.isFinished) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.error
-                }
+                text = formatTimestamp(match.completedAt ?: match.createdAt),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
+        Spacer(modifier = Modifier.size(12.dp))
+
+        entry.participants.forEach { participant ->
+            ParticipantRow(
+                participant = participant,
+                score = if (decidedBySets) participant.setWins else participant.legWins
+            )
+        }
+
+        Spacer(modifier = Modifier.size(12.dp))
+
+        Text(
+            text = subtitleOf(match, decidedBySets, entry.isFinished),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (entry.isFinished) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.error
+            }
+        )
     }
 }
 
@@ -161,12 +169,6 @@ private fun ParticipantRow(participant: HistoryParticipant, score: Int?) {
     }
 }
 
-private fun titleOf(match: Match): String = when (match.gameMode) {
-    GameMode.X01 -> "${match.startPoints} · ${outRuleLabel(match.outRule)}"
-    GameMode.CRICKET -> "Cricket"
-    GameMode.SPLIT -> "Split"
-}
-
 private fun subtitleOf(match: Match, decidedBySets: Boolean, isFinished: Boolean): String {
     if (!isFinished) return "Unfinished"
 
@@ -174,8 +176,3 @@ private fun subtitleOf(match: Match, decidedBySets: Boolean, isFinished: Boolean
     val legs = "${mode.lowercase()} ${match.legsTarget} legs"
     return if (decidedBySets) "$mode ${match.setsTarget} sets · $legs" else "$mode ${match.legsTarget} legs"
 }
-
-private val historyDateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm")
-
-private fun formatTimestamp(epochMillis: Long): String =
-    Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).format(historyDateFormat)

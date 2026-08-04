@@ -17,9 +17,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.dartx.data.local.Match
+import com.example.dartx.model.GameMode
 import com.example.dartx.model.InRule
 import com.example.dartx.model.OutRule
 import com.example.dartx.model.SetLegMode
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +61,17 @@ internal fun setLegModeLabel(mode: SetLegMode): String = when (mode) {
     SetLegMode.FIRST_TO -> "First to"
     SetLegMode.BEST_OF -> "Best of"
 }
+
+internal fun titleOf(match: Match): String = when (match.gameMode) {
+    GameMode.X01 -> "${match.startPoints} · ${outRuleLabel(match.outRule)}"
+    GameMode.CRICKET -> "Cricket"
+    GameMode.SPLIT -> "Split"
+}
+
+private val matchDateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm")
+
+internal fun formatTimestamp(epochMillis: Long): String =
+    Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).format(matchDateFormat)
 
 /** A labelled group of single-choice chips, used throughout the match setup flow. */
 @OptIn(ExperimentalLayoutApi::class)

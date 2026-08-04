@@ -3,6 +3,7 @@ package com.example.dartx.data.local
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.dartx.model.Multiplier
+import com.example.dartx.model.ThrowStatus
 
 /**
  * One dart, or (for fast turn-total entry) one whole turn recorded as a single
@@ -18,5 +19,7 @@ data class Throw(
     val fieldValue: Int?,
     val multiplier: Multiplier?,
     val score: Int,
+    val legNumber: Int = 1,
+    val status: ThrowStatus = ThrowStatus.COUNTED,
     val timestamp: Long = System.currentTimeMillis()
 )

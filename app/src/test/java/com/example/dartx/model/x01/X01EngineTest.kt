@@ -4,6 +4,7 @@ import com.example.dartx.model.Dart
 import com.example.dartx.model.InRule
 import com.example.dartx.model.Multiplier
 import com.example.dartx.model.OutRule
+import com.example.dartx.model.ThrowStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -227,5 +228,83 @@ class X01EngineTest {
 
         assertEquals(TurnResult.Outcome.CHECKOUT, result.outcome)
         assertEquals(1, result.dartsThrown)
+        assertEquals(listOf(ThrowStatus.COUNTED), result.throwStatuses)
+    }
+
+    @Test
+    fun `straight in marks every dart as counted`() {
+        val start = TurnStartState(remaining = 501, isPlayerIn = false)
+        val darts = listOf(d(20, Multiplier.TRIPLE), d(20, Multiplier.SINGLE), Dart.MISS)
+
+        val result = X01Engine.applyTurn(start, darts, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN)
+
+        assertEquals(List(3) { ThrowStatus.COUNTED }, result.throwStatuses)
+    }
+
+    @Test
+    fun `double in marks the darts before the double as not in`() {
+        val start = TurnStartState(remaining = 100, isPlayerIn = false)
+        val darts = listOf(d(5, Multiplier.SINGLE), d(19, Multiplier.SINGLE), d(10, Multiplier.DOUBLE))
+
+        val result = X01Engine.applyTurn(start, darts, OutRule.DOUBLE_OUT, InRule.DOUBLE_IN)
+
+        assertEquals(
+            listOf(ThrowStatus.NOT_IN, ThrowStatus.NOT_IN, ThrowStatus.COUNTED),
+            result.throwStatuses
+        )
+    }
+
+    @Test
+    fun `double in with no double marks every dart as not in`() {
+        val start = TurnStartState(remaining = 100, isPlayerIn = false)
+        val darts = listOf(d(5, Multiplier.SINGLE), d(19, Multiplier.SINGLE), d(1, Multiplier.SINGLE))
+
+        val result = X01Engine.applyTurn(start, darts, OutRule.DOUBLE_OUT, InRule.DOUBLE_IN)
+
+        assertEquals(List(3) { ThrowStatus.NOT_IN }, result.throwStatuses)
+    }
+
+    @Test
+    fun `a bust marks only the darts actually thrown`() {
+        val start = TurnStartState(remaining = 30, isPlayerIn = true)
+        val darts = listOf(d(5, Multiplier.SINGLE), d(20, Multiplier.TRIPLE), d(20, Multiplier.TRIPLE))
+
+        val result = X01Engine.applyTurn(start, darts, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN)
+
+        assertEquals(TurnResult.Outcome.BUST, result.outcome)
+        assertEquals(2, result.dartsThrown)
+        assertEquals(listOf(ThrowStatus.BUST, ThrowStatus.BUST), result.throwStatuses)
+    }
+
+    @Test
+    fun `a bust overrides not in for the whole turn`() {
+        val start = TurnStartState(remaining = 60, isPlayerIn = false)
+        val darts = listOf(d(5, Multiplier.SINGLE), d(20, Multiplier.DOUBLE), d(20, Multiplier.TRIPLE))
+
+        val result = X01Engine.applyTurn(start, darts, OutRule.DOUBLE_OUT, InRule.DOUBLE_IN)
+
+        assertEquals(TurnResult.Outcome.BUST, result.outcome)
+        assertEquals(List(3) { ThrowStatus.BUST }, result.throwStatuses)
+    }
+
+    @Test
+    fun `a turn total always yields exactly one status`() {
+        val start = TurnStartState(remaining = 40, isPlayerIn = true)
+
+        assertEquals(
+            listOf(ThrowStatus.COUNTED),
+            X01Engine.applyTurnTotal(start, 20, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN).throwStatuses
+        )
+        assertEquals(
+            listOf(ThrowStatus.BUST),
+            X01Engine.applyTurnTotal(start, 60, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN).throwStatuses
+        )
+        assertEquals(
+            listOf(ThrowStatus.NOT_IN),
+            X01Engine.applyTurnTotal(
+                TurnStartState(remaining = 40, isPlayerIn = false), 0,
+                OutRule.DOUBLE_OUT, InRule.DOUBLE_IN
+            ).throwStatuses
+        )
     }
 }

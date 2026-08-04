@@ -56,12 +56,14 @@ import com.example.dartx.viewmodel.LiveMatchViewModel
 import com.example.dartx.viewmodel.LiveMatchViewModelFactory
 import com.example.dartx.viewmodel.PlayerBoard
 import com.example.dartx.viewmodel.ScoreInputMode
+import com.example.dartx.viewmodel.formatAverage
 
 @Composable
 fun LiveMatchScreen(
     matchId: Long,
     onExit: () -> Unit,
     onOpenSettings: () -> Unit,
+    onViewStats: () -> Unit,
     viewModel: LiveMatchViewModel = viewModel(
         factory = LiveMatchViewModelFactory(LocalContext.current, matchId)
     )
@@ -145,6 +147,9 @@ fun LiveMatchScreen(
                     text = { Text("${winner.name} wins!") },
                     confirmButton = {
                         TextButton(onClick = onExit) { Text("Done") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = onViewStats) { Text("View stats") }
                     }
                 )
             }
@@ -182,8 +187,11 @@ private fun ScoreboardRow(board: PlayerBoard, displayedRemaining: Int, showInFla
                     fontWeight = if (board.isCurrentPlayer) FontWeight.Bold else FontWeight.Normal
                 )
                 Text(
-                    text = "Sets ${board.setWins} · Legs ${board.legWins}" +
-                        if (showInFlag && !board.isIn) " · not in" else "",
+                    text = buildString {
+                        append("Sets ${board.setWins} · Legs ${board.legWins}")
+                        if (showInFlag && !board.isIn) append(" · not in")
+                        board.threeDartAverage?.let { append(" · Avg ${formatAverage(it)}") }
+                    },
                     style = MaterialTheme.typography.bodySmall
                 )
             }
