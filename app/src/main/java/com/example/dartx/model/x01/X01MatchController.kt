@@ -54,6 +54,43 @@ class X01MatchController(
 
     val currentPlayerId: Long get() = order[turnIndex]
 
+    /** Everything a turn can change, so a committed turn can be taken back. */
+    data class Snapshot(
+        val setWins: Map<Long, Int>,
+        val legWins: Map<Long, Int>,
+        val totalLegWins: Map<Long, Int>,
+        val remaining: Map<Long, Int>,
+        val isIn: Map<Long, Boolean>,
+        val legStartIndex: Int,
+        val turnIndex: Int,
+        val legNumber: Int,
+        val matchWinner: Long?
+    )
+
+    fun snapshot(): Snapshot = Snapshot(
+        setWins = setWins.toMap(),
+        legWins = legWins.toMap(),
+        totalLegWins = totalLegWins.toMap(),
+        remaining = remaining.toMap(),
+        isIn = isIn.toMap(),
+        legStartIndex = legStartIndex,
+        turnIndex = turnIndex,
+        legNumber = legNumber,
+        matchWinner = matchWinner
+    )
+
+    fun restore(snapshot: Snapshot) {
+        setWins.putAll(snapshot.setWins)
+        legWins.putAll(snapshot.legWins)
+        totalLegWins.putAll(snapshot.totalLegWins)
+        remaining.putAll(snapshot.remaining)
+        isIn.putAll(snapshot.isIn)
+        legStartIndex = snapshot.legStartIndex
+        turnIndex = snapshot.turnIndex
+        legNumber = snapshot.legNumber
+        matchWinner = snapshot.matchWinner
+    }
+
     /** State the current player's turn starts from — lets the UI preview a turn dart by dart. */
     fun currentTurnStart(): TurnStartState =
         TurnStartState(remaining.getValue(currentPlayerId), isIn.getValue(currentPlayerId))

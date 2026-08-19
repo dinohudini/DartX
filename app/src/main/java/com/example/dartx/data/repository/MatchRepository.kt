@@ -23,6 +23,9 @@ class MatchRepository(
 
     suspend fun recordThrow(throwEntry: Throw): Long = throwDao.insert(throwEntry)
 
+    suspend fun deleteTurn(matchId: Long, playerId: Long, turnNumber: Int) =
+        throwDao.deleteTurn(matchId, playerId, turnNumber)
+
     fun getThrowsForMatch(matchId: Long): Flow<List<Throw>> = throwDao.getThrowsForMatch(matchId)
 
     fun getThrowsForPlayer(playerId: Long): Flow<List<Throw>> = throwDao.getThrowsForPlayer(playerId)

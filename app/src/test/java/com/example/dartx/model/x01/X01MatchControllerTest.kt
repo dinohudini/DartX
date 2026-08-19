@@ -199,4 +199,86 @@ class X01MatchControllerTest {
         assertEquals(20, controller.remainingFor(1L))
         assertEquals(2L, controller.currentPlayerId)
     }
+
+    @Test
+    fun `restoring a snapshot takes back an ordinary turn`() {
+        val controller = X01MatchController(
+            playerIds = listOf(1L, 2L, 3L),
+            startPoints = 501,
+            outRule = OutRule.DOUBLE_OUT,
+            inRule = InRule.DOUBLE_IN,
+            setLegMode = SetLegMode.FIRST_TO,
+            setsTarget = 1,
+            legsTarget = 3
+        )
+
+        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE), d(20, Multiplier.TRIPLE)))
+        val before = controller.snapshot()
+
+        assertEquals(2L, controller.currentPlayerId)
+        controller.applyTurn(listOf(d(19, Multiplier.DOUBLE), d(19, Multiplier.TRIPLE)))
+        controller.restore(before)
+
+        assertEquals(2L, controller.currentPlayerId)
+        assertEquals(501, controller.remainingFor(2L))
+        assertEquals(false, controller.isInFor(2L))
+        // Player 1's turn is untouched by the rollback of player 2's.
+        assertEquals(401, controller.remainingFor(1L))
+        assertEquals(true, controller.isInFor(1L))
+    }
+
+    @Test
+    fun `restoring a snapshot takes back the turn that won the match`() {
+        val controller = X01MatchController(
+            playerIds = listOf(1L, 2L),
+            startPoints = 40,
+            outRule = OutRule.DOUBLE_OUT,
+            inRule = InRule.STRAIGHT_IN,
+            setLegMode = SetLegMode.FIRST_TO,
+            setsTarget = 2,
+            legsTarget = 1
+        )
+
+        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE))) // player 1 takes set 1
+        val before = controller.snapshot()
+
+        while (controller.currentPlayerId != 1L) {
+            controller.applyTurn(listOf(d(1, Multiplier.SINGLE)))
+        }
+        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE))) // and the match
+        assertEquals(1L, controller.matchWinner)
+
+        controller.restore(before)
+
+        assertNull(controller.matchWinner)
+        assertEquals(1, controller.setWinsFor(1L))
+        assertEquals(1, controller.totalLegWinsFor(1L))
+        assertEquals(0, controller.legWinsFor(1L))
+        assertEquals(2L, controller.currentPlayerId)
+        assertEquals(40, controller.remainingFor(1L))
+        // A match the controller no longer considers won accepts turns again.
+        assertEquals(2L, controller.applyTurn(listOf(d(1, Multiplier.SINGLE))).playerId)
+    }
+
+    @Test
+    fun `a leg replayed after a rollback lands in the same leg number`() {
+        val controller = X01MatchController(
+            playerIds = listOf(1L, 2L),
+            startPoints = 40,
+            outRule = OutRule.DOUBLE_OUT,
+            inRule = InRule.STRAIGHT_IN,
+            setLegMode = SetLegMode.FIRST_TO,
+            setsTarget = 1,
+            legsTarget = 3
+        )
+
+        val before = controller.snapshot()
+        val first = controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
+        controller.restore(before)
+        val replayed = controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
+
+        assertEquals(first.legNumber, replayed.legNumber)
+        assertEquals(1, controller.legWinsFor(1L))
+        assertEquals(1, controller.totalLegWinsFor(1L))
+    }
 }

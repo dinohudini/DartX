@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -129,12 +129,16 @@ fun LiveMatchScreen(
                     )
 
                     when (state.inputMode) {
-                        ScoreInputMode.TURN_TOTAL -> TurnTotalPad(onSubmit = viewModel::submitTurnTotal)
+                        ScoreInputMode.TURN_TOTAL -> TurnTotalPad(
+                            canUndo = state.canUndo,
+                            onSubmit = viewModel::submitTurnTotal,
+                            onUndo = viewModel::undo
+                        )
                         ScoreInputMode.PER_DART -> PerDartPad(
                             pendingDarts = state.pendingDarts,
+                            canUndo = state.canUndo,
                             onDart = viewModel::addDart,
-                            onUndo = viewModel::undoPendingDart,
-                            onEndTurn = viewModel::endTurnEarly
+                            onUndo = viewModel::undo
                         )
                     }
                 }
@@ -149,7 +153,11 @@ fun LiveMatchScreen(
                         TextButton(onClick = onExit) { Text("Done") }
                     },
                     dismissButton = {
-                        TextButton(onClick = onViewStats) { Text("View stats") }
+                        Row {
+                            // The winning dart is exactly the one most worth being able to retype.
+                            TextButton(onClick = viewModel::undo) { Text("Undo") }
+                            TextButton(onClick = onViewStats) { Text("View stats") }
+                        }
                     }
                 )
             }
@@ -207,7 +215,7 @@ private fun ScoreboardRow(board: PlayerBoard, displayedRemaining: Int, showInFla
 
 /** Fast entry: type the whole turn's score on a keypad. */
 @Composable
-private fun TurnTotalPad(onSubmit: (Int) -> Unit) {
+private fun TurnTotalPad(canUndo: Boolean, onSubmit: (Int) -> Unit, onUndo: () -> Unit) {
     var typed by remember { mutableStateOf("") }
 
     Column(
@@ -247,16 +255,23 @@ private fun TurnTotalPad(onSubmit: (Int) -> Unit) {
                 typed = ""
             }
         }
+
+        PadButton(
+            label = "Undo",
+            modifier = Modifier.fillMaxWidth(),
+            enabled = canUndo,
+            onClick = onUndo
+        )
     }
 }
 
-/** Detailed entry: pick a multiplier, then the field that was hit, one dart at a time. */
+/** Detailed entry: pick the field that was hit, one dart at a time, with an optional multiplier. */
 @Composable
 private fun PerDartPad(
     pendingDarts: List<Dart>,
+    canUndo: Boolean,
     onDart: (Dart) -> Unit,
-    onUndo: () -> Unit,
-    onEndTurn: () -> Unit
+    onUndo: () -> Unit
 ) {
     var multiplier by remember { mutableStateOf(Multiplier.SINGLE) }
 
@@ -276,16 +291,6 @@ private fun PerDartPad(
             style = MaterialTheme.typography.bodyMedium
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Multiplier.entries.forEach { option ->
-                FilterChip(
-                    selected = option == multiplier,
-                    onClick = { multiplier = option },
-                    label = { Text(multiplierLabel(option)) }
-                )
-            }
-        }
-
         (1..20).chunked(5).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { value ->
@@ -298,28 +303,40 @@ private fun PerDartPad(
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PadButton(
-                label = "Bull",
+                label = "25",
                 modifier = Modifier.weight(1f),
                 // A bull has a single (25) and a double (50) ring, but no triple.
                 enabled = multiplier != Multiplier.TRIPLE
             ) {
                 throwDart(Dart(25, multiplier))
             }
-            PadButton(label = "Miss", modifier = Modifier.weight(1f)) { throwDart(Dart.MISS) }
+            PadButton(label = "0", modifier = Modifier.weight(1f)) { throwDart(Dart.MISS) }
             PadButton(
                 label = "Undo",
                 modifier = Modifier.weight(1f),
-                enabled = pendingDarts.isNotEmpty(),
+                enabled = pendingDarts.isNotEmpty() || canUndo,
                 onClick = onUndo
             )
         }
 
-        Button(
-            onClick = onEndTurn,
-            enabled = pendingDarts.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("End turn early")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(Multiplier.DOUBLE, Multiplier.TRIPLE).forEach { option ->
+                val selected = option == multiplier
+                FilterChip(
+                    selected = selected,
+                    onClick = { multiplier = if (selected) Multiplier.SINGLE else option },
+                    label = {
+                        Text(
+                            text = multiplierLabel(option),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                )
+            }
         }
     }
 }
@@ -334,9 +351,15 @@ private fun PadButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.height(48.dp)
+        modifier = modifier.height(48.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 0.dp)
     ) {
-        Text(label)
+        Text(
+            text = label,
+            maxLines = 1,
+            softWrap = false,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
