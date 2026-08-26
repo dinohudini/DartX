@@ -19,8 +19,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.dartx.ui.theme.Green
+import com.example.dartx.ui.theme.TextSecondary
 import com.example.dartx.viewmodel.PlayerStatsViewModel
 import com.example.dartx.viewmodel.PlayerStatsViewModelFactory
+
+private const val BASKETS = "Scoring baskets"
 
 @Composable
 fun PlayerStatsScreen(
@@ -33,6 +37,7 @@ fun PlayerStatsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = { BackTopBar(title = state.name ?: "Statistics", onBack = onBack) }
     ) { innerPadding ->
         Box(
@@ -41,24 +46,27 @@ fun PlayerStatsScreen(
                 .padding(innerPadding)
         ) {
             when {
-                state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                state.isLoading -> CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Green
+                )
 
                 state.name == null -> Text(
                     text = "This player no longer exists.",
                     style = MaterialTheme.typography.bodyLarge,
+                    color = TextSecondary,
                     modifier = Modifier.align(Alignment.Center)
                 )
 
-                !state.hasPlayed -> Text(
-                    text = "No finished matches yet.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                !state.hasPlayed -> EmptyState(
+                    title = "No finished matches yet",
+                    detail = "Statistics start counting once a match is won.",
                     modifier = Modifier.align(Alignment.Center)
                 )
 
                 else -> LazyColumn(
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
                         PlayerHeading(
@@ -66,7 +74,13 @@ fun PlayerStatsScreen(
                             avatarColor = state.avatarColor
                         )
                     }
-                    items(state.sections) { section -> StatSectionCard(section) }
+                    items(state.sections) { section ->
+                        if (section.title == BASKETS) {
+                            BasketRow(section)
+                        } else {
+                            StatSectionCard(section)
+                        }
+                    }
                 }
             }
         }

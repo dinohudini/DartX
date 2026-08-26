@@ -19,8 +19,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.dartx.ui.theme.Green
+import com.example.dartx.ui.theme.TextFaint
+import com.example.dartx.ui.theme.TextSecondary
 import com.example.dartx.viewmodel.MatchStatsViewModel
 import com.example.dartx.viewmodel.MatchStatsViewModelFactory
+
+private const val BASKETS = "Scoring baskets"
 
 @Composable
 fun MatchStatsScreen(
@@ -33,6 +38,7 @@ fun MatchStatsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = { BackTopBar(title = "Match stats", onBack = onBack) }
     ) { innerPadding ->
         Box(
@@ -41,38 +47,36 @@ fun MatchStatsScreen(
                 .padding(innerPadding)
         ) {
             when {
-                state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                state.isLoading -> CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Green
+                )
 
                 state.match == null -> Text(
                     text = "This match no longer exists.",
                     style = MaterialTheme.typography.bodyLarge,
+                    color = TextSecondary,
                     modifier = Modifier.align(Alignment.Center)
                 )
 
-                !state.isCounted -> Text(
-                    text = "Statistics are kept for finished matches only.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(24.dp)
+                !state.isCounted -> EmptyState(
+                    title = "Statistics are kept for finished matches only",
+                    detail = "This match was abandoned before anyone won it.",
+                    modifier = Modifier.align(Alignment.Center)
                 )
 
                 else -> LazyColumn(
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
                         state.match?.let { match ->
-                            Column {
-                                Text(
-                                    text = titleOf(match),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                SectionLabel(titleOf(match))
                                 Text(
                                     text = formatTimestamp(match.completedAt ?: match.createdAt),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextFaint
                                 )
                             }
                         }
@@ -82,8 +86,16 @@ fun MatchStatsScreen(
                         item(key = "player-${player.playerId}") {
                             PlayerHeading(name = player.name, avatarColor = player.avatarColor)
                         }
-                        items(player.sections.size) { index ->
-                            StatSectionCard(player.sections[index])
+                        items(
+                            count = player.sections.size,
+                            key = { index -> "section-${player.playerId}-$index" }
+                        ) { index ->
+                            val section = player.sections[index]
+                            if (section.title == BASKETS) {
+                                BasketRow(section)
+                            } else {
+                                StatSectionCard(section)
+                            }
                         }
                     }
                 }

@@ -1,20 +1,19 @@
 package com.example.dartx.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +23,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.dartx.ui.theme.Green
+import com.example.dartx.ui.theme.StrokeFaint
+import com.example.dartx.ui.theme.StrokeHairline
+import com.example.dartx.ui.theme.SurfaceCard
+import com.example.dartx.ui.theme.SurfaceRaised
+import com.example.dartx.ui.theme.TextFaint
+import com.example.dartx.ui.theme.TextPrimary
+import com.example.dartx.ui.theme.TextSecondary
 import com.example.dartx.viewmodel.LiveMatchViewModel
 import com.example.dartx.viewmodel.ScoreInputMode
 
@@ -38,6 +45,7 @@ fun MatchSettingsScreen(viewModel: LiveMatchViewModel, onBack: () -> Unit) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = { BackTopBar(title = "Match settings", onBack = onBack) }
     ) { innerPadding ->
         Column(
@@ -46,14 +54,15 @@ fun MatchSettingsScreen(viewModel: LiveMatchViewModel, onBack: () -> Unit) {
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(28.dp)
         ) {
             SettingsSection(
                 title = "Score input",
-                description = "How darts are entered on the live screen."
+                description = "How darts are entered on the live screen. Changing it applies to " +
+                    "the match already in progress."
             ) {
                 ScoreInputMode.entries.forEachIndexed { index, option ->
-                    if (index > 0) HorizontalDivider()
+                    if (index > 0) HorizontalDivider(color = StrokeFaint)
                     RadioOptionRow(
                         title = inputModeTitle(option),
                         description = inputModeDescription(option),
@@ -68,17 +77,17 @@ fun MatchSettingsScreen(viewModel: LiveMatchViewModel, onBack: () -> Unit) {
                     title = "Match rules",
                     description = "Chosen at setup and fixed for the whole match."
                 ) {
-                    RuleRow("Start points", match.startPoints.toString())
-                    RuleRow("Out rule", outRuleLabel(match.outRule))
-                    RuleRow("In rule", inRuleLabel(match.inRule))
-                    RuleRow(
-                        "Sets",
-                        "${setLegModeLabel(match.setLegMode).lowercase()} ${match.setsTarget}"
+                    val rules = listOf(
+                        "Start points" to match.startPoints.toString(),
+                        "Out rule" to outRuleLabel(match.outRule),
+                        "In rule" to inRuleLabel(match.inRule),
+                        "Sets" to "${setLegModeLabel(match.setLegMode).lowercase()} ${match.setsTarget}",
+                        "Legs" to "${setLegModeLabel(match.setLegMode).lowercase()} ${match.legsTarget}"
                     )
-                    RuleRow(
-                        "Legs",
-                        "${setLegModeLabel(match.setLegMode).lowercase()} ${match.legsTarget}"
-                    )
+                    rules.forEachIndexed { index, (label, value) ->
+                        if (index > 0) HorizontalDivider(color = StrokeHairline)
+                        RuleRow(label = label, value = value)
+                    }
                 }
             }
         }
@@ -92,12 +101,22 @@ private fun SettingsSection(
     description: String? = null,
     content: @Composable () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionLabel(title)
         if (description != null) {
-            Text(text = description, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextFaint
+            )
         }
-        Card(modifier = Modifier.fillMaxWidth()) { content() }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .panelSurface()
+        ) {
+            content()
+        }
     }
 }
 
@@ -109,18 +128,36 @@ private fun RadioOptionRow(
     onSelect: () -> Unit
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         modifier = Modifier
             .fillMaxWidth()
+            .background(if (selected) SurfaceRaised else SurfaceCard)
             // Selecting on the whole row, not just the button, is the expected touch target.
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .padding(16.dp)
     ) {
-        RadioButton(selected = selected, onClick = null)
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            Text(text = description, style = MaterialTheme.typography.bodySmall)
+        RadioButton(
+            selected = selected,
+            onClick = null,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = Green,
+                unselectedColor = TextFaint
+            )
+        )
+        Column(
+            modifier = Modifier.padding(start = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (selected) TextPrimary else TextSecondary
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (selected) TextSecondary else TextFaint
+            )
         }
     }
 }
@@ -131,11 +168,19 @@ private fun RuleRow(label: String, value: String) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(16.dp)
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium)
-        Spacer(modifier = Modifier.weight(1f))
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextSecondary,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleSmall,
+            color = TextPrimary
+        )
     }
 }
 

@@ -5,14 +5,14 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#E8EDF2"
+        android:fillColor="#FFFFFF"
         android:pathData="M46.2,50.5 L25.7,39.9 L39.9,25.7 L50.5,46.2 Z" />
     <group
         android:pivotX="54"
         android:pivotY="54"
         android:rotation="90">
         <path
-            android:fillColor="#E8EDF2"
+            android:fillColor="#FFFFFF"
             android:pathData="M46.2,50.5 L25.7,39.9 L39.9,25.7 L50.5,46.2 Z" />
     </group>
     <group
@@ -20,7 +20,7 @@
         android:pivotY="54"
         android:rotation="180">
         <path
-            android:fillColor="#E8EDF2"
+            android:fillColor="#FFFFFF"
             android:pathData="M46.2,50.5 L25.7,39.9 L39.9,25.7 L50.5,46.2 Z" />
     </group>
     <group
@@ -28,11 +28,11 @@
         android:pivotY="54"
         android:rotation="270">
         <path
-            android:fillColor="#E8EDF2"
+            android:fillColor="#FFFFFF"
             android:pathData="M46.2,50.5 L25.7,39.9 L39.9,25.7 L50.5,46.2 Z" />
     </group>
     <path
-        android:fillColor="#E8EDF2"
+        android:fillColor="#FFFFFF"
         android:fillType="evenOdd"
         android:pathData="M45,54 A9,9 0 1,0 63,54 A9,9 0 1,0 45,54 Z M49.5,54 A4.5,4.5 0 1,0 58.5,54 A4.5,4.5 0 1,0 49.5,54 Z" />
 </vector>

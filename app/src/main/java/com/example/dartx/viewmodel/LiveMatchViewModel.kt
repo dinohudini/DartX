@@ -29,11 +29,14 @@ data class PlayerBoard(
     val player: Player,
     val remaining: Int,
     val legWins: Int,
+    val totalLegWins: Int,
     val setWins: Int,
     val isCurrentPlayer: Boolean,
     val isIn: Boolean,
     val threeDartAverage: Double?
 )
+
+enum class MessageTone { NEUTRAL, ALERT, GOOD }
 
 data class LiveMatchUiState(
     val isLoading: Boolean = true,
@@ -46,6 +49,7 @@ data class LiveMatchUiState(
     /** Whether a turn that is already committed can still be taken back. */
     val canUndo: Boolean = false,
     val message: String? = null,
+    val messageTone: MessageTone = MessageTone.NEUTRAL,
     val winner: Player? = null,
     val error: String? = null
 )
@@ -154,7 +158,12 @@ class LiveMatchViewModel(
             commitDarts(darts)
         } else {
             _uiState.update {
-                it.copy(pendingDarts = darts, previewRemaining = preview.remainingAfter, message = null)
+                it.copy(
+                    pendingDarts = darts,
+                    previewRemaining = preview.remainingAfter,
+                    message = null,
+                    messageTone = MessageTone.NEUTRAL
+                )
             }
         }
     }
@@ -202,6 +211,7 @@ class LiveMatchViewModel(
                 previewRemaining = previewOf(restaged),
                 canUndo = undoStack.isNotEmpty(),
                 message = "Undid ${nameOf(undone.playerId)}'s turn",
+                messageTone = MessageTone.NEUTRAL,
                 winner = null
             )
         }
@@ -254,7 +264,12 @@ class LiveMatchViewModel(
         val controller = controller ?: return
         if (_uiState.value.winner != null) return
         if (total !in 0..180) {
-            _uiState.update { it.copy(message = "A turn total must be between 0 and 180") }
+            _uiState.update {
+                it.copy(
+                    message = "A turn total must be between 0 and 180",
+                    messageTone = MessageTone.ALERT
+                )
+            }
             return
         }
 
@@ -293,6 +308,7 @@ class LiveMatchViewModel(
                 previewRemaining = null,
                 canUndo = true,
                 message = messageFor(outcome, scored),
+                messageTone = toneFor(outcome),
                 winner = winner
             )
         }
@@ -328,6 +344,14 @@ class LiveMatchViewModel(
             setWins = match.participantIds.map { if (it in playing) controller.setWinsFor(it) else 0 },
             legWins = match.participantIds.map { if (it in playing) controller.totalLegWinsFor(it) else 0 }
         )
+    }
+
+    private fun toneFor(outcome: X01TurnOutcome): MessageTone = when {
+        outcome.matchWonBy != null || outcome.setWonBy != null || outcome.legWonBy != null ->
+            MessageTone.GOOD
+        outcome.turnResult.outcome == TurnResult.Outcome.BUST -> MessageTone.ALERT
+        !outcome.turnResult.isPlayerInAfter -> MessageTone.ALERT
+        else -> MessageTone.NEUTRAL
     }
 
     private fun messageFor(outcome: X01TurnOutcome, scored: Int): String {
@@ -370,6 +394,7 @@ class LiveMatchViewModel(
                 player = player,
                 remaining = controller.remainingFor(player.id),
                 legWins = controller.legWinsFor(player.id),
+                totalLegWins = controller.totalLegWinsFor(player.id),
                 setWins = controller.setWinsFor(player.id),
                 isCurrentPlayer = controller.matchWinner == null && player.id == controller.currentPlayerId,
                 isIn = controller.isInFor(player.id),
