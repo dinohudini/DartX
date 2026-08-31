@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -82,6 +83,42 @@ import com.example.dartx.viewmodel.formatAverage
 private val KeyShape = RoundedCornerShape(10.dp)
 private val CardShape = RoundedCornerShape(14.dp)
 
+private val BoardGap = 10.dp
+private val StripGap = 8.dp
+private val PadGap = 8.dp
+private val PadBottomPadding = 12.dp
+
+private data class LiveMatchMetrics(
+    val boardHeight: Dp,
+    val slotHeight: Dp,
+    val displayHeight: Dp,
+    val messageHeight: Dp,
+    val keyHeight: Dp,
+    val chipHeight: Dp
+) {
+    val compactBoards: Boolean get() = boardHeight < 88.dp
+
+    fun requiredHeight(boardCount: Int, perDart: Boolean): Dp {
+        val boards = boardHeight * boardCount + BoardGap * (boardCount - 1).coerceAtLeast(0)
+        val strip = (if (perDart) slotHeight else displayHeight) + messageHeight + StripGap * 3
+        val keyRows = if (perDart) 5 else 4
+        val trailing = if (perDart) chipHeight else keyHeight
+        val pad = keyHeight * keyRows + PadGap * keyRows + trailing + PadBottomPadding
+        return boards + strip + pad
+    }
+}
+
+private val LiveMatchSizes = listOf(
+    LiveMatchMetrics(100.dp, 60.dp, 88.dp, 44.dp, 56.dp, 52.dp),
+    LiveMatchMetrics(88.dp, 56.dp, 80.dp, 40.dp, 52.dp, 48.dp),
+    LiveMatchMetrics(76.dp, 52.dp, 72.dp, 36.dp, 48.dp, 44.dp),
+    LiveMatchMetrics(68.dp, 48.dp, 64.dp, 32.dp, 44.dp, 42.dp)
+)
+
+private fun metricsFor(available: Dp, boardCount: Int, perDart: Boolean): LiveMatchMetrics =
+    LiveMatchSizes.firstOrNull { it.requiredHeight(boardCount, perDart) <= available }
+        ?: LiveMatchSizes.last()
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LiveMatchScreen(
@@ -134,11 +171,13 @@ fun LiveMatchScreen(
             )
         }
     ) { innerPadding ->
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            val available = maxHeight
+
             when {
                 state.isLoading -> CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
@@ -154,56 +193,78 @@ fun LiveMatchScreen(
                         .padding(24.dp)
                 )
 
-                else -> Column(modifier = Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        state.boards.forEach { board ->
-                            ScoreboardRow(
-                                board = board,
-                                displayedRemaining = if (board.isCurrentPlayer) {
-                                    state.previewRemaining ?: board.remaining
-                                } else {
-                                    board.remaining
-                                },
-                                showInFlag = state.match?.inRule == InRule.DOUBLE_IN
+                else -> {
+                    val perDart = state.inputMode == ScoreInputMode.PER_DART
+                    val metrics = metricsFor(available, state.boards.size, perDart)
+
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(BoardGap)
+                        ) {
+                            state.boards.forEach { board ->
+                                ScoreboardRow(
+                                    board = board,
+                                    displayedRemaining = if (board.isCurrentPlayer) {
+                                        state.previewRemaining ?: board.remaining
+                                    } else {
+                                        board.remaining
+                                    },
+                                    showInFlag = state.match?.inRule == InRule.DOUBLE_IN,
+                                    metrics = metrics
+                                )
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(StripGap)
+                        ) {
+                            when (state.inputMode) {
+                                ScoreInputMode.PER_DART -> TurnSlots(
+                                    pendingDarts = state.pendingDarts,
+                                    height = metrics.slotHeight
+                                )
+
+                                ScoreInputMode.TURN_TOTAL -> TurnTotalDisplay(
+                                    typed = typed,
+                                    remaining = state.boards.firstOrNull { it.isCurrentPlayer }?.remaining,
+                                    height = metrics.displayHeight
+                                )
+                            }
+
+                            MessageLine(
+                                message = state.message,
+                                tone = state.messageTone,
+                                height = metrics.messageHeight
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(StripGap))
 
                         when (state.inputMode) {
-                            ScoreInputMode.PER_DART -> TurnSlots(state.pendingDarts)
-                            ScoreInputMode.TURN_TOTAL -> TurnTotalDisplay(
+                            ScoreInputMode.TURN_TOTAL -> TurnTotalPad(
                                 typed = typed,
-                                remaining = state.boards.firstOrNull { it.isCurrentPlayer }?.remaining
+                                canUndo = state.canUndo,
+                                metrics = metrics,
+                                onTyped = { typed = it },
+                                onSubmit = {
+                                    viewModel.submitTurnTotal(it)
+                                    typed = ""
+                                },
+                                onUndo = viewModel::undo
+                            )
+
+                            ScoreInputMode.PER_DART -> PerDartPad(
+                                canUndo = state.canUndo,
+                                metrics = metrics,
+                                onDart = viewModel::addDart,
+                                onUndo = viewModel::undo
                             )
                         }
-
-                        MessageLine(message = state.message, tone = state.messageTone)
-                    }
-
-                    when (state.inputMode) {
-                        ScoreInputMode.TURN_TOTAL -> TurnTotalPad(
-                            typed = typed,
-                            canUndo = state.canUndo,
-                            onTyped = { typed = it },
-                            onSubmit = {
-                                viewModel.submitTurnTotal(it)
-                                typed = ""
-                            },
-                            onUndo = viewModel::undo
-                        )
-
-                        ScoreInputMode.PER_DART -> PerDartPad(
-                            canUndo = state.canUndo,
-                            onDart = viewModel::addDart,
-                            onUndo = viewModel::undo
-                        )
                     }
                 }
             }
@@ -236,13 +297,19 @@ fun LiveMatchScreen(
 }
 
 @Composable
-private fun ScoreboardRow(board: PlayerBoard, displayedRemaining: Int, showInFlag: Boolean) {
+private fun ScoreboardRow(
+    board: PlayerBoard,
+    displayedRemaining: Int,
+    showInFlag: Boolean,
+    metrics: LiveMatchMetrics
+) {
     val active = board.isCurrentPlayer
+    val compact = metrics.compactBoards
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp)
+            .height(metrics.boardHeight)
             .clip(CardShape)
             .background(if (active) SurfaceRaised else SurfaceCard)
             .border(
@@ -266,11 +333,15 @@ private fun ScoreboardRow(board: PlayerBoard, displayedRemaining: Int, showInFla
         ) {
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(5.dp)
+                verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)
             ) {
                 Text(
                     text = board.player.name,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = if (compact) {
+                        MaterialTheme.typography.titleMedium
+                    } else {
+                        MaterialTheme.typography.titleLarge
+                    },
                     color = if (active) TextPrimary else TextSecondary,
                     maxLines = 1
                 )
@@ -283,15 +354,21 @@ private fun ScoreboardRow(board: PlayerBoard, displayedRemaining: Int, showInFla
                     color = if (active) TextSecondary else TextFaint,
                     maxLines = 1
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (active) Tag(text = "To throw", color = GreenBright)
-                    if (showInFlag && !board.isIn) Tag(text = "Not in", color = RedBright)
+                if (active || (showInFlag && !board.isIn)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (active) Tag(text = "To throw", color = GreenBright)
+                        if (showInFlag && !board.isIn) Tag(text = "Not in", color = RedBright)
+                    }
                 }
             }
 
             Text(
                 text = displayedRemaining.toString(),
-                style = MaterialTheme.typography.displayLarge,
+                style = if (compact) {
+                    MaterialTheme.typography.displayMedium
+                } else {
+                    MaterialTheme.typography.displayLarge
+                },
                 color = if (active) ScoreActive else TextFaint
             )
         }
@@ -319,14 +396,14 @@ private fun Tag(text: String, color: Color) {
 }
 
 @Composable
-private fun TurnSlots(pendingDarts: List<Dart>) {
+private fun TurnSlots(pendingDarts: List<Dart>, height: Dp) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         repeat(3) { index ->
             val dart = pendingDarts.getOrNull(index)
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(60.dp)
+                    .height(height)
                     .clip(KeyShape)
                     .background(if (dart != null) SurfaceRaised else SurfaceRecessed)
                     .border(
@@ -361,14 +438,14 @@ private fun TurnSlots(pendingDarts: List<Dart>) {
 }
 
 @Composable
-private fun TurnTotalDisplay(typed: String, remaining: Int?) {
+private fun TurnTotalDisplay(typed: String, remaining: Int?, height: Dp) {
     val entered = typed.toIntOrNull()
     val leaves = remaining?.let { it - (entered ?: 0) }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(88.dp)
+            .height(height)
             .clip(CardShape)
             .background(SurfaceCard)
             .border(1.dp, Stroke, CardShape)
@@ -398,7 +475,7 @@ private fun TurnTotalDisplay(typed: String, remaining: Int?) {
 }
 
 @Composable
-private fun MessageLine(message: String?, tone: MessageTone) {
+private fun MessageLine(message: String?, tone: MessageTone, height: Dp) {
     val color = when (tone) {
         MessageTone.ALERT -> RedBright
         MessageTone.GOOD -> GreenBright
@@ -413,7 +490,7 @@ private fun MessageLine(message: String?, tone: MessageTone) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(height)
             .clip(KeyShape)
             .background(background),
         contentAlignment = Alignment.Center
@@ -432,39 +509,42 @@ private fun MessageLine(message: String?, tone: MessageTone) {
 private fun TurnTotalPad(
     typed: String,
     canUndo: Boolean,
+    metrics: LiveMatchMetrics,
     onTyped: (String) -> Unit,
     onSubmit: (Int) -> Unit,
     onUndo: () -> Unit
 ) {
+    val keyHeight = metrics.keyHeight
+
     Column(
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = PadBottomPadding),
+        verticalArrangement = Arrangement.spacedBy(PadGap)
     ) {
         listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9")).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(PadGap)) {
                 row.forEach { digit ->
-                    Key(label = digit, height = 60.dp, modifier = Modifier.weight(1f)) {
+                    Key(label = digit, height = keyHeight, modifier = Modifier.weight(1f)) {
                         if (typed.length < 3) onTyped(typed + digit)
                     }
                 }
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(PadGap)) {
             Key(
                 label = "CLEAR",
                 numeric = false,
-                height = 60.dp,
+                height = keyHeight,
                 tone = KeyTone.QUIET,
                 modifier = Modifier.weight(1f)
             ) { onTyped("") }
-            Key(label = "0", height = 60.dp, modifier = Modifier.weight(1f)) {
+            Key(label = "0", height = keyHeight, modifier = Modifier.weight(1f)) {
                 if (typed.isNotEmpty() && typed.length < 3) onTyped(typed + "0")
             }
             Key(
                 label = "ENTER",
                 numeric = false,
-                height = 60.dp,
+                height = keyHeight,
                 tone = KeyTone.PRIMARY,
                 enabled = typed.isNotEmpty(),
                 modifier = Modifier.weight(1f)
@@ -474,11 +554,10 @@ private fun TurnTotalPad(
         Key(
             label = "UNDO LAST TURN",
             numeric = false,
+            height = keyHeight,
             tone = KeyTone.QUIET,
             enabled = canUndo,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
+            modifier = Modifier.fillMaxWidth(),
             onClick = onUndo
         )
     }
@@ -487,11 +566,13 @@ private fun TurnTotalPad(
 @Composable
 private fun PerDartPad(
     canUndo: Boolean,
+    metrics: LiveMatchMetrics,
     onDart: (Dart) -> Unit,
     onUndo: () -> Unit
 ) {
     var multiplier by remember { mutableStateOf(Multiplier.SINGLE) }
     val armed = multiplier != Multiplier.SINGLE
+    val keyHeight = metrics.keyHeight
 
     fun throwDart(dart: Dart) {
         onDart(dart)
@@ -499,29 +580,35 @@ private fun PerDartPad(
     }
 
     Column(
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = PadBottomPadding),
+        verticalArrangement = Arrangement.spacedBy(PadGap)
     ) {
         (1..20).chunked(5).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(PadGap)) {
                 row.forEach { value ->
-                    Key(label = value.toString(), armed = armed, modifier = Modifier.weight(1f)) {
+                    Key(
+                        label = value.toString(),
+                        armed = armed,
+                        height = keyHeight,
+                        modifier = Modifier.weight(1f)
+                    ) {
                         throwDart(Dart(value, multiplier))
                     }
                 }
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(PadGap)) {
             Key(
                 label = "25",
                 armed = armed,
                 enabled = multiplier != Multiplier.TRIPLE,
+                height = keyHeight,
                 modifier = Modifier.weight(1f)
             ) {
                 throwDart(Dart(25, multiplier))
             }
-            Key(label = "0", modifier = Modifier.weight(1f)) {
+            Key(label = "0", height = keyHeight, modifier = Modifier.weight(1f)) {
                 throwDart(Dart.MISS)
             }
             Key(
@@ -529,20 +616,19 @@ private fun PerDartPad(
                 numeric = false,
                 tone = KeyTone.QUIET,
                 enabled = canUndo,
+                height = keyHeight,
                 modifier = Modifier.weight(1f),
                 onClick = onUndo
             )
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 4.dp)
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(PadGap)) {
             listOf(Multiplier.DOUBLE, Multiplier.TRIPLE).forEach { option ->
                 val selected = option == multiplier
                 MultiplierChip(
                     label = multiplierLabel(option),
                     selected = selected,
+                    height = metrics.chipHeight,
                     modifier = Modifier.weight(1f)
                 ) {
                     multiplier = if (selected) Multiplier.SINGLE else option
@@ -613,12 +699,13 @@ private fun Key(
 private fun MultiplierChip(
     label: String,
     selected: Boolean,
+    height: Dp,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Box(
         modifier = modifier
-            .height(52.dp)
+            .height(height)
             .clip(CircleShape)
             .background(if (selected) Green.copy(alpha = 0.18f) else SurfaceCard)
             .border(1.dp, if (selected) Green else Stroke, CircleShape)
