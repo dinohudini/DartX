@@ -1,6 +1,5 @@
 package com.example.dartx.model
 
-/** A single thrown dart. [fieldValue] is 1-20, 25 for bull, or 0 for a complete miss. */
 data class Dart(val fieldValue: Int, val multiplier: Multiplier = Multiplier.SINGLE) {
 
     init {
@@ -20,7 +19,6 @@ data class Dart(val fieldValue: Int, val multiplier: Multiplier = Multiplier.SIN
     val isTriple: Boolean get() = multiplier == Multiplier.TRIPLE
 
     companion object {
-        /** A dart that hit nothing — scores 0 and never satisfies an in/out rule. */
         val MISS = Dart(0, Multiplier.SINGLE)
     }
 }

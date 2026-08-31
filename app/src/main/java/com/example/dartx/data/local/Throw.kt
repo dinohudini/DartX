@@ -5,10 +5,6 @@ import androidx.room.PrimaryKey
 import com.example.dartx.model.Multiplier
 import com.example.dartx.model.ThrowStatus
 
-/**
- * One dart, or (for fast turn-total entry) one whole turn recorded as a single
- * generic row with [fieldValue]/[multiplier] left null and [score] holding the total.
- */
 @Entity(tableName = "throws")
 data class Throw(
     @PrimaryKey(autoGenerate = true)

@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** A player with the headline record shown next to their name in the players list. */
 data class PlayerRow(
     val player: Player,
     val matchesPlayed: Int,
@@ -29,7 +28,6 @@ class PlayerViewModel(
 
     val rows: StateFlow<List<PlayerRow>> =
         combine(repository.allPlayers, matchRepository.allMatches) { players, matches ->
-            // Only finished X01 matches carry a result, so only those are worth counting.
             val counted = matches.filter(X01MatchStats::countsForStats)
             players.map { player ->
                 PlayerRow(

@@ -17,16 +17,8 @@ data class TurnResult(
     enum class Outcome { NORMAL, BUST, CHECKOUT }
 }
 
-/**
- * Pure turn-scoring logic for 501/301 (and custom start points).
- * Stateless: takes the state at the start of a turn and the darts thrown, returns the result.
- */
 object X01Engine {
 
-    /**
-     * Darts attributed to a turn entered as a bare total. The real count is unknown with fast
-     * entry, and 3 is both the common case and the divisor a 3-dart average expects.
-     */
     const val NOMINAL_DARTS_PER_TURN = 3
 
     fun applyTurn(
@@ -50,7 +42,6 @@ object X01Engine {
                     isIn = true
                     becameInThisTurn = true
                 } else {
-                    // Double-in not yet achieved: dart is thrown but doesn't count.
                     statuses += ThrowStatus.NOT_IN
                     continue
                 }
@@ -62,8 +53,6 @@ object X01Engine {
             val leavesUnfinishableOne = newRemaining == 1 && outRule != OutRule.SINGLE_OUT
 
             if (newRemaining < 0 || leavesUnfinishableOne) {
-                // Bust: whole turn's score is voided, but a double hit earlier in
-                // this same turn still legitimately got the player "in".
                 return TurnResult(
                     remainingAfter = start.remaining,
                     isPlayerInAfter = start.isPlayerIn || becameInThisTurn,
@@ -110,14 +99,6 @@ object X01Engine {
         )
     }
 
-    /**
-     * Fast entry: a whole turn given as a single total, with the individual fields unknown.
-     *
-     * Without the fields the engine cannot check the in/out rules itself, so the player asserts
-     * them at the board: under double-in any non-zero total is taken as proof they got in, and
-     * landing on exactly zero is taken as a legal finish. The bust rules that depend only on the
-     * total — dropping below zero, or leaving exactly 1 — are still enforced here.
-     */
     fun applyTurnTotal(
         start: TurnStartState,
         total: Int,

@@ -22,7 +22,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-/** The two entry modes from the spec: a bare turn total, or every dart individually. */
 enum class ScoreInputMode { TURN_TOTAL, PER_DART }
 
 data class PlayerBoard(
@@ -44,9 +43,7 @@ data class LiveMatchUiState(
     val boards: List<PlayerBoard> = emptyList(),
     val inputMode: ScoreInputMode = ScoreInputMode.PER_DART,
     val pendingDarts: List<Dart> = emptyList(),
-    /** Remaining for the current player part-way through a per-dart turn, before it is committed. */
     val previewRemaining: Int? = null,
-    /** Whether a turn that is already committed can still be taken back. */
     val canUndo: Boolean = false,
     val message: String? = null,
     val messageTone: MessageTone = MessageTone.NEUTRAL,
@@ -54,7 +51,6 @@ data class LiveMatchUiState(
     val error: String? = null
 )
 
-/** Everything a turn changes outside the controller, captured before the turn is applied. */
 private data class MatchState(
     val controller: X01MatchController.Snapshot,
     val pointsScored: Map<Long, Int>,
@@ -67,7 +63,6 @@ private data class CommittedTurn(
     val state: MatchState,
     val playerId: Long,
     val turnNumber: Int,
-    /** The darts as recorded — empty for a turn entered as a bare total. */
     val darts: List<Dart>
 )
 
@@ -76,10 +71,6 @@ private fun <K, V> MutableMap<K, V>.replaceWith(source: Map<K, V>) {
     putAll(source)
 }
 
-/**
- * Drives one live X01 match: wraps [X01MatchController] for the rules and writes every dart
- * to the repository as it is entered.
- */
 class LiveMatchViewModel(
     private val matchId: Long,
     private val matchRepository: MatchRepository,
@@ -93,16 +84,13 @@ class LiveMatchViewModel(
     private var match: Match? = null
     private var players: List<Player> = emptyList()
 
-    /** Turn counter per player, so [Throw.turnNumber] groups the darts of one turn together. */
     private val turnNumbers = mutableMapOf<Long, Int>()
 
     private val pointsScored = mutableMapOf<Long, Int>()
     private val dartsThrown = mutableMapOf<Long, Int>()
 
-    /** One entry per committed turn, so undo can walk back to the start of the match. */
     private val undoStack = mutableListOf<CommittedTurn>()
 
-    /** Keeps concurrent turns from interleaving their inserts, so throw ids stay in throw order. */
     private val writeLock = Mutex()
 
     init {
@@ -138,14 +126,9 @@ class LiveMatchViewModel(
     }
 
     fun setInputMode(mode: ScoreInputMode) {
-        // Darts staged in the other mode would be lost silently otherwise.
         _uiState.update { it.copy(inputMode = mode, pendingDarts = emptyList(), previewRemaining = null) }
     }
 
-    /**
-     * Stages one dart. The turn is committed as soon as it can no longer change — three darts
-     * thrown, or a bust/checkout — so the player never has to confirm an already-decided turn.
-     */
     fun addDart(dart: Dart) {
         val controller = controller ?: return
         val match = match ?: return
@@ -168,12 +151,6 @@ class LiveMatchViewModel(
         }
     }
 
-    /**
-     * Takes back one dart. A turn still being entered loses its last dart; once the turn is
-     * committed — which happens on its own after three darts, a bust or a checkout — the whole
-     * turn is rolled back and its earlier darts are staged again, so a mistyped last dart can be
-     * re-entered without replaying the rest.
-     */
     fun undo() {
         if (_uiState.value.pendingDarts.isNotEmpty()) undoPendingDart() else undoLastTurn()
     }
@@ -192,12 +169,10 @@ class LiveMatchViewModel(
         dartsThrown.replaceWith(undone.state.dartsThrown)
         turnNumbers.replaceWith(undone.state.turnNumbers)
 
-        // The match row is only rewritten if the undone turn had already finished the match.
         val restoredMatch = undone.state.match
         val rewriteMatch = restoredMatch.takeIf { it != match }
         match = restoredMatch
 
-        // Darts are only worth staging again for the pad that can actually take darts.
         val restaged = if (_uiState.value.inputMode == ScoreInputMode.PER_DART) {
             undone.darts.dropLast(1)
         } else {
@@ -226,7 +201,6 @@ class LiveMatchViewModel(
         }
     }
 
-    /** Remaining for the current player if [darts] were thrown, or null when nothing is staged. */
     private fun previewOf(darts: List<Dart>): Int? {
         val controller = controller ?: return null
         val match = match ?: return null
@@ -282,14 +256,12 @@ class LiveMatchViewModel(
             matchId = matchId,
             playerId = outcome.playerId,
             turnNumber = turnNumber,
-            // Fast entry knows the total but not the fields, which is exactly the generic row.
             fieldValue = null,
             multiplier = null,
             score = total,
             legNumber = outcome.legNumber,
             status = result.throwStatuses.first()
         )
-        // A turn total knows no individual darts, so undoing it stages nothing back.
         undoStack += CommittedTurn(before, outcome.playerId, turnNumber, darts = emptyList())
         publish(outcome, scored = scoreBefore - result.remainingAfter, rows = listOf(row))
     }
@@ -332,11 +304,6 @@ class LiveMatchViewModel(
         }
     }
 
-    /**
-     * Snapshots the final score onto the match row, so the history screen can render a result
-     * without replaying every throw. Scores stay parallel to `participantIds`; a participant the
-     * controller does not know (deleted between matches) scores 0 rather than shifting the list.
-     */
     private fun withFinalScore(match: Match): Match {
         val controller = controller ?: return match
         val playing = players.map { it.id }.toSet()

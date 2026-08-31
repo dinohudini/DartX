@@ -85,7 +85,6 @@ fun MatchHistoryScreen(
 @Composable
 private fun MatchHistoryCard(entry: MatchHistoryEntry, onOpenStats: () -> Unit) {
     val match = entry.match
-    // Sets are only worth reporting when the match was actually played over more than one.
     val decidedBySets = match.setLegMode.winsNeeded(match.setsTarget) > 1
 
     Column(
@@ -146,7 +145,6 @@ private fun ParticipantRow(participant: HistoryParticipant, score: Int?) {
             modifier = Modifier.weight(1f)
         )
         Text(
-            // An unfinished match recorded no score, and a dash says that without claiming a 0.
             text = score?.toString() ?: "–",
             style = MaterialTheme.typography.displaySmall,
             color = if (won) TextPrimary else TextFaint

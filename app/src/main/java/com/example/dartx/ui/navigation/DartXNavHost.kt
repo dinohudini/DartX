@@ -86,7 +86,6 @@ fun DartXNavHost() {
             MatchSetupScreen(
                 onBack = { navController.popBackStack() },
                 onMatchCreated = { matchId ->
-                    // Setup is done once per match; leaving the live screen goes back home.
                     navController.navigate(Routes.liveMatch(matchId)) {
                         popUpTo(Routes.SETUP) { inclusive = true }
                     }
@@ -124,8 +123,6 @@ fun DartXNavHost() {
             arguments = listOf(navArgument(Routes.MATCH_ID_ARG) { type = NavType.LongType })
         ) { backStackEntry ->
             val matchId = backStackEntry.arguments?.getLong(Routes.MATCH_ID_ARG) ?: return@composable
-            // Scope the ViewModel to the live match entry rather than to this one, so settings
-            // changes reach the match in progress instead of a second, throwaway controller.
             val matchEntry = remember(backStackEntry) {
                 navController.getBackStackEntry(Routes.liveMatch(matchId))
             }

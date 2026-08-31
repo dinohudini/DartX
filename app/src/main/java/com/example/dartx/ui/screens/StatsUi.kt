@@ -75,10 +75,6 @@ private fun StatRow(item: StatItem) {
     }
 }
 
-/**
- * The scoring baskets read better as four numbers side by side than as another label/value list —
- * they are the one section a player actually compares at a glance.
- */
 @Composable
 internal fun BasketRow(section: StatSection) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

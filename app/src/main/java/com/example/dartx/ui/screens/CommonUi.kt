@@ -88,7 +88,6 @@ internal fun BackTopBar(
     )
 }
 
-/** The small tracked-out caps that head every group of controls. */
 @Composable
 internal fun SectionLabel(text: String, color: Color = TextSecondary) {
     Text(
@@ -98,7 +97,6 @@ internal fun SectionLabel(text: String, color: Color = TextSecondary) {
     )
 }
 
-/** The one card surface the whole app uses: flat fill, hairline border, shared radius. */
 internal fun Modifier.panelSurface(
     shape: Shape = PanelShape,
     fill: Color = SurfaceCard,
@@ -169,7 +167,6 @@ internal fun SecondaryButton(
     }
 }
 
-/** A single-choice pill. Selected reads as armed green, the same as the live pad's chips. */
 @Composable
 internal fun ChoicePill(
     label: String,
@@ -223,7 +220,6 @@ internal fun AvatarDot(colorHex: String?, size: Dp) {
     )
 }
 
-/** Shown wherever a list has nothing in it yet — the mark, dimmed, and one honest line. */
 @Composable
 internal fun EmptyState(
     title: String,
@@ -258,8 +254,6 @@ internal fun EmptyState(
     }
 }
 
-// Rule labels live here rather than on one screen, because setup picks the rules and the
-// live match's settings screen shows them back.
 internal fun outRuleLabel(rule: OutRule): String = when (rule) {
     OutRule.DOUBLE_OUT -> "Double out"
     OutRule.MASTER_OUT -> "Master out"
@@ -287,7 +281,6 @@ private val matchDateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d 
 internal fun formatTimestamp(epochMillis: Long): String =
     Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).format(matchDateFormat)
 
-/** A labelled group of single-choice pills, used throughout the match setup flow. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun <T> ChoiceSection(

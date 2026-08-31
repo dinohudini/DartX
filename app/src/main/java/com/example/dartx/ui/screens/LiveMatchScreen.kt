@@ -318,7 +318,6 @@ private fun Tag(text: String, color: Color) {
     }
 }
 
-/** Three slots standing in for the three darts of a turn, so nobody has to count them. */
 @Composable
 private fun TurnSlots(pendingDarts: List<Dart>) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -429,7 +428,6 @@ private fun MessageLine(message: String?, tone: MessageTone) {
     }
 }
 
-/** Fast entry: type the whole turn's score on a keypad. */
 @Composable
 private fun TurnTotalPad(
     typed: String,
@@ -486,7 +484,6 @@ private fun TurnTotalPad(
     }
 }
 
-/** Detailed entry: pick the field that was hit, one dart at a time, with an optional multiplier. */
 @Composable
 private fun PerDartPad(
     canUndo: Boolean,
@@ -498,7 +495,6 @@ private fun PerDartPad(
 
     fun throwDart(dart: Dart) {
         onDart(dart)
-        // Multipliers apply to one dart only, so don't make the player unset it every time.
         multiplier = Multiplier.SINGLE
     }
 
@@ -520,7 +516,6 @@ private fun PerDartPad(
             Key(
                 label = "25",
                 armed = armed,
-                // A bull has a single (25) and a double (50) ring, but no triple.
                 enabled = multiplier != Multiplier.TRIPLE,
                 modifier = Modifier.weight(1f)
             ) {
@@ -559,10 +554,6 @@ private fun PerDartPad(
 
 private enum class KeyTone { NEUTRAL, QUIET, PRIMARY }
 
-/**
- * One key on either pad. Horizontal padding is deliberately tiny: Material's default content
- * padding is wide enough to wrap a two-digit label onto a second line on a narrow phone.
- */
 @Composable
 private fun Key(
     label: String,

@@ -12,14 +12,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-/**
- * One participant of a past match, with the names and colours already resolved.
- * Scores are null for a match that was never finished, since none was recorded.
- */
 data class HistoryParticipant(
     val playerId: Long,
     val name: String,
-    /** Null once the player has been deleted, leaving no colour to show. */
     val avatarColor: String?,
     val setWins: Int?,
     val legWins: Int?,
@@ -38,11 +33,6 @@ data class MatchHistoryUiState(
     val entries: List<MatchHistoryEntry> = emptyList()
 )
 
-/**
- * Read-only list of past matches. Everything shown comes from the `matches` table alone —
- * the score was snapshotted there when the match ended, so no throw has to be replayed to
- * draw a row.
- */
 class MatchHistoryViewModel(
     matchRepository: MatchRepository,
     playerRepository: PlayerRepository
@@ -68,7 +58,6 @@ private fun toEntry(match: Match, playersById: Map<Long, Player>): MatchHistoryE
             playerId = playerId,
             name = player?.name ?: "Deleted player",
             avatarColor = player?.avatarColor,
-            // The score lists are parallel to participantIds, and empty until the match is won.
             setWins = match.setWins.getOrNull(index),
             legWins = match.legWins.getOrNull(index),
             isWinner = playerId == match.winnerPlayerId

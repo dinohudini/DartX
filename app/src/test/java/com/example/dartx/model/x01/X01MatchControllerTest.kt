@@ -26,11 +26,11 @@ class X01MatchControllerTest {
         )
 
         assertEquals(1L, controller.currentPlayerId)
-        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE))) // player 1 checks out leg 1
+        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
 
-        assertEquals(2L, controller.currentPlayerId) // player 2 starts leg 2
+        assertEquals(2L, controller.currentPlayerId)
         assertEquals(1, controller.legWinsFor(1L))
-        assertEquals(40, controller.remainingFor(1L)) // reset for the new leg
+        assertEquals(40, controller.remainingFor(1L))
     }
 
     @Test
@@ -45,8 +45,6 @@ class X01MatchControllerTest {
             legsTarget = 3
         )
 
-        // Player 1 wins 3 legs in a row (player 2 never scores). Who starts each leg
-        // alternates regardless of who won, so drain any non-player-1 turns first.
         repeat(3) {
             while (controller.currentPlayerId != 1L) {
                 controller.applyTurn(listOf(d(1, Multiplier.SINGLE)))
@@ -70,7 +68,6 @@ class X01MatchControllerTest {
             legsTarget = 2
         )
 
-        // Player 1 takes both sets 2-0, so four legs in total.
         repeat(4) {
             while (controller.currentPlayerId != 1L) {
                 controller.applyTurn(listOf(d(1, Multiplier.SINGLE)))
@@ -80,7 +77,7 @@ class X01MatchControllerTest {
 
         assertEquals(1L, controller.matchWinner)
         assertEquals(2, controller.setWinsFor(1L))
-        assertEquals(0, controller.legWinsFor(1L)) // reset by the set win
+        assertEquals(0, controller.legWinsFor(1L))
         assertEquals(4, controller.totalLegWinsFor(1L))
         assertEquals(0, controller.totalLegWinsFor(2L))
     }
@@ -108,7 +105,7 @@ class X01MatchControllerTest {
         while (bestOf.currentPlayerId != 1L) {
             bestOf.applyTurn(listOf(d(1, Multiplier.SINGLE)))
         }
-        bestOf.applyTurn(listOf(d(20, Multiplier.DOUBLE))) // player 1's 3rd leg win
+        bestOf.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
 
         assertEquals(1L, bestOf.matchWinner)
     }
@@ -192,7 +189,7 @@ class X01MatchControllerTest {
             legsTarget = 1
         )
 
-        val outcome = controller.applyTurn(listOf(d(20, Multiplier.SINGLE))) // leaves 0 on a single -> bust
+        val outcome = controller.applyTurn(listOf(d(20, Multiplier.SINGLE)))
 
         assertEquals(TurnResult.Outcome.BUST, outcome.turnResult.outcome)
         assertNull(outcome.legWonBy)
@@ -222,7 +219,6 @@ class X01MatchControllerTest {
         assertEquals(2L, controller.currentPlayerId)
         assertEquals(501, controller.remainingFor(2L))
         assertEquals(false, controller.isInFor(2L))
-        // Player 1's turn is untouched by the rollback of player 2's.
         assertEquals(401, controller.remainingFor(1L))
         assertEquals(true, controller.isInFor(1L))
     }
@@ -239,13 +235,13 @@ class X01MatchControllerTest {
             legsTarget = 1
         )
 
-        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE))) // player 1 takes set 1
+        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
         val before = controller.snapshot()
 
         while (controller.currentPlayerId != 1L) {
             controller.applyTurn(listOf(d(1, Multiplier.SINGLE)))
         }
-        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE))) // and the match
+        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
         assertEquals(1L, controller.matchWinner)
 
         controller.restore(before)
@@ -256,7 +252,6 @@ class X01MatchControllerTest {
         assertEquals(0, controller.legWinsFor(1L))
         assertEquals(2L, controller.currentPlayerId)
         assertEquals(40, controller.remainingFor(1L))
-        // A match the controller no longer considers won accepts turns again.
         assertEquals(2L, controller.applyTurn(listOf(d(1, Multiplier.SINGLE))).playerId)
     }
 

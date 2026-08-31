@@ -17,10 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/**
- * Backs the setup flow. The match row is written before the live screen opens, so that screen
- * only needs a match id and reads every setting back from the repository.
- */
 class MatchSetupViewModel(
     private val playerRepository: PlayerRepository,
     private val matchRepository: MatchRepository
@@ -60,7 +56,6 @@ class MatchSetupViewModel(
         }
     }
 
-    /** Clears the one-shot navigation signal so returning to setup doesn't re-open the match. */
     fun onMatchOpened() {
         _createdMatchId.value = null
     }

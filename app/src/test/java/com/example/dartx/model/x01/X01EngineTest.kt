@@ -29,7 +29,6 @@ class X01EngineTest {
     @Test
     fun `double in darts before the double do not count`() {
         val start = TurnStartState(remaining = 100, isPlayerIn = false)
-        // Miss, miss, then double 10 (=20) to get in.
         val darts = listOf(d(5, Multiplier.SINGLE), d(19, Multiplier.SINGLE), d(10, Multiplier.DOUBLE))
 
         val result = X01Engine.applyTurn(start, darts, OutRule.DOUBLE_OUT, InRule.DOUBLE_IN)
@@ -54,7 +53,6 @@ class X01EngineTest {
     @Test
     fun `getting in via double then busting later in the same turn stays in`() {
         val start = TurnStartState(remaining = 60, isPlayerIn = false)
-        // D20 gets them in (remaining 20), then T20 overshoots -> bust.
         val darts = listOf(d(20, Multiplier.DOUBLE), d(20, Multiplier.TRIPLE))
 
         val result = X01Engine.applyTurn(start, darts, OutRule.DOUBLE_OUT, InRule.DOUBLE_IN)
@@ -199,7 +197,6 @@ class X01EngineTest {
     fun `turn total reaching zero is taken as a legal finish`() {
         val start = TurnStartState(remaining = 40, isPlayerIn = true)
 
-        // The fields are unknown, so the player asserts the double themselves.
         val result = X01Engine.applyTurnTotal(start, 40, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN)
 
         assertEquals(TurnResult.Outcome.CHECKOUT, result.outcome)

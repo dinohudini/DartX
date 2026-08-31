@@ -60,10 +60,6 @@ import com.example.dartx.viewmodel.MatchSetupViewModelFactory
 
 private val startPointsPresets = listOf(501, 301)
 
-/**
- * The setup flow from the spec as one ordered form: players -> game mode -> start points ->
- * out rule -> in rule -> sets/legs -> set/leg mode -> Start Game.
- */
 @Composable
 fun MatchSetupScreen(
     onBack: () -> Unit,
@@ -75,7 +71,6 @@ fun MatchSetupScreen(
     val players by viewModel.players.collectAsStateWithLifecycle()
     val createdMatchId by viewModel.createdMatchId.collectAsStateWithLifecycle()
 
-    // Selection order is throw order, so the list is ordered, not a set.
     var selectedIds by remember { mutableStateOf(emptyList<Long>()) }
     var gameMode by remember { mutableStateOf(GameMode.X01) }
     var startPointsText by remember { mutableStateOf("501") }

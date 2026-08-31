@@ -34,12 +34,6 @@ import com.example.dartx.ui.theme.TextSecondary
 import com.example.dartx.viewmodel.LiveMatchViewModel
 import com.example.dartx.viewmodel.ScoreInputMode
 
-/**
- * Settings for the match that is currently being played, opened from the live match's top bar.
- *
- * It shares [LiveMatchViewModel] with the live screen (see the nav host), so a change here applies
- * to the match already in progress instead of only to the next one.
- */
 @Composable
 fun MatchSettingsScreen(viewModel: LiveMatchViewModel, onBack: () -> Unit) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -94,7 +88,6 @@ fun MatchSettingsScreen(viewModel: LiveMatchViewModel, onBack: () -> Unit) {
     }
 }
 
-/** A titled block of related settings; new option groups slot in as further calls of this. */
 @Composable
 private fun SettingsSection(
     title: String,
@@ -132,7 +125,6 @@ private fun RadioOptionRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(if (selected) SurfaceRaised else SurfaceCard)
-            // Selecting on the whole row, not just the button, is the expected touch target.
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .padding(16.dp)
     ) {
