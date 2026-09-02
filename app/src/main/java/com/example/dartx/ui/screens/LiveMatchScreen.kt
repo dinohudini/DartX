@@ -1,6 +1,7 @@
 package com.example.dartx.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,8 +43,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -79,6 +83,8 @@ import com.example.dartx.viewmodel.MessageTone
 import com.example.dartx.viewmodel.PlayerBoard
 import com.example.dartx.viewmodel.ScoreInputMode
 import com.example.dartx.viewmodel.formatAverage
+import kotlin.math.floor
+import kotlin.math.roundToInt
 
 private val KeyShape = RoundedCornerShape(10.dp)
 private val CardShape = RoundedCornerShape(14.dp)
@@ -87,37 +93,59 @@ private val BoardGap = 10.dp
 private val StripGap = 8.dp
 private val PadGap = 8.dp
 private val PadBottomPadding = 12.dp
+private val ZoneGap = 16.dp
+private val EdgeFadeHeight = 24.dp
+private val MinCardHeight = 80.dp
+private val MaxCardHeight = 100.dp
+private const val PadKeyRows = 5
+private const val CardsInZone = 2
 
-private data class LiveMatchMetrics(
-    val boardHeight: Dp,
+private data class PadSizes(
     val slotHeight: Dp,
     val displayHeight: Dp,
     val messageHeight: Dp,
-    val keyHeight: Dp,
-    val chipHeight: Dp
+    val keyHeight: Dp
 ) {
-    val compactBoards: Boolean get() = boardHeight < 88.dp
+    val height: Dp
+        get() = keyHeight * PadKeyRows + PadGap * (PadKeyRows - 1) + PadBottomPadding
 
-    fun requiredHeight(boardCount: Int, perDart: Boolean): Dp {
-        val boards = boardHeight * boardCount + BoardGap * (boardCount - 1).coerceAtLeast(0)
-        val strip = (if (perDart) slotHeight else displayHeight) + messageHeight + StripGap * 3
-        val keyRows = if (perDart) 5 else 4
-        val trailing = if (perDart) chipHeight else keyHeight
-        val pad = keyHeight * keyRows + PadGap * keyRows + trailing + PadBottomPadding
-        return boards + strip + pad
-    }
+    fun stripHeight(perDart: Boolean): Dp =
+        (if (perDart) slotHeight else displayHeight) + StripGap + messageHeight + ZoneGap
 }
 
-private val LiveMatchSizes = listOf(
-    LiveMatchMetrics(100.dp, 60.dp, 88.dp, 44.dp, 56.dp, 52.dp),
-    LiveMatchMetrics(88.dp, 56.dp, 80.dp, 40.dp, 52.dp, 48.dp),
-    LiveMatchMetrics(76.dp, 52.dp, 72.dp, 36.dp, 48.dp, 44.dp),
-    LiveMatchMetrics(68.dp, 48.dp, 64.dp, 32.dp, 44.dp, 42.dp)
+private val PadLadder = listOf(
+    PadSizes(60.dp, 74.dp, 44.dp, 56.dp),
+    PadSizes(52.dp, 64.dp, 36.dp, 48.dp),
+    PadSizes(46.dp, 58.dp, 30.dp, 42.dp)
 )
 
-private fun metricsFor(available: Dp, boardCount: Int, perDart: Boolean): LiveMatchMetrics =
-    LiveMatchSizes.firstOrNull { it.requiredHeight(boardCount, perDart) <= available }
-        ?: LiveMatchSizes.last()
+private data class LiveMatchMetrics(
+    val pad: PadSizes,
+    val cardHeight: Dp,
+    val zoneHeight: Dp
+)
+
+private fun cardSpan(count: Int, card: Dp): Dp = card * count + BoardGap * (count - 1)
+
+private fun boardsBudget(available: Dp, pad: PadSizes, perDart: Boolean): Dp =
+    available - pad.height - pad.stripHeight(perDart)
+
+private fun metricsFor(available: Dp, boardCount: Int, perDart: Boolean): LiveMatchMetrics {
+    val pad = PadLadder.firstOrNull {
+        boardsBudget(available, it, perDart) >= cardSpan(CardsInZone, MinCardHeight)
+    } ?: PadLadder.last()
+
+    val budget = boardsBudget(available, pad, perDart)
+    val fair = (budget - BoardGap * (CardsInZone - 1)) / CardsInZone
+    val card = Dp(floor(fair.value)).coerceIn(MinCardHeight, MaxCardHeight)
+    val shown = boardCount.coerceIn(1, CardsInZone)
+
+    return LiveMatchMetrics(
+        pad = pad,
+        cardHeight = card,
+        zoneHeight = cardSpan(shown, card).coerceAtMost(budget)
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -196,28 +224,46 @@ fun LiveMatchScreen(
                 else -> {
                     val perDart = state.inputMode == ScoreInputMode.PER_DART
                     val metrics = metricsFor(available, state.boards.size, perDart)
+                    val boardScroll = rememberScrollState()
+
+                    FollowCurrentPlayer(
+                        scrollState = boardScroll,
+                        currentIndex = state.boards.indexOfFirst { it.isCurrentPlayer },
+                        boardHeight = metrics.cardHeight
+                    )
 
                     Column(modifier = Modifier.fillMaxSize()) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(BoardGap)
-                        ) {
-                            state.boards.forEach { board ->
-                                ScoreboardRow(
-                                    board = board,
-                                    displayedRemaining = if (board.isCurrentPlayer) {
-                                        state.previewRemaining ?: board.remaining
-                                    } else {
-                                        board.remaining
-                                    },
-                                    showInFlag = state.match?.inRule == InRule.DOUBLE_IN,
-                                    metrics = metrics
-                                )
+                        Box(modifier = Modifier.height(metrics.zoneHeight)) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(boardScroll)
+                                    .padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(BoardGap)
+                            ) {
+                                state.boards.forEach { board ->
+                                    ScoreboardRow(
+                                        board = board,
+                                        displayedRemaining = if (board.isCurrentPlayer) {
+                                            state.previewRemaining ?: board.remaining
+                                        } else {
+                                            board.remaining
+                                        },
+                                        showInFlag = state.match?.inRule == InRule.DOUBLE_IN,
+                                        height = metrics.cardHeight
+                                    )
+                                }
+                            }
+
+                            if (boardScroll.canScrollBackward) {
+                                EdgeFade(modifier = Modifier.align(Alignment.TopCenter), atTop = true)
+                            }
+                            if (boardScroll.canScrollForward) {
+                                EdgeFade(modifier = Modifier.align(Alignment.BottomCenter), atTop = false)
                             }
                         }
+
+                        Spacer(modifier = Modifier.weight(1f))
 
                         Column(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -226,20 +272,20 @@ fun LiveMatchScreen(
                             when (state.inputMode) {
                                 ScoreInputMode.PER_DART -> TurnSlots(
                                     pendingDarts = state.pendingDarts,
-                                    height = metrics.slotHeight
+                                    height = metrics.pad.slotHeight
                                 )
 
                                 ScoreInputMode.TURN_TOTAL -> TurnTotalDisplay(
                                     typed = typed,
                                     remaining = state.boards.firstOrNull { it.isCurrentPlayer }?.remaining,
-                                    height = metrics.displayHeight
+                                    height = metrics.pad.displayHeight
                                 )
                             }
 
                             MessageLine(
                                 message = state.message,
                                 tone = state.messageTone,
-                                height = metrics.messageHeight
+                                height = metrics.pad.messageHeight
                             )
                         }
 
@@ -249,7 +295,7 @@ fun LiveMatchScreen(
                             ScoreInputMode.TURN_TOTAL -> TurnTotalPad(
                                 typed = typed,
                                 canUndo = state.canUndo,
-                                metrics = metrics,
+                                keyHeight = metrics.pad.keyHeight,
                                 onTyped = { typed = it },
                                 onSubmit = {
                                     viewModel.submitTurnTotal(it)
@@ -260,7 +306,7 @@ fun LiveMatchScreen(
 
                             ScoreInputMode.PER_DART -> PerDartPad(
                                 canUndo = state.canUndo,
-                                metrics = metrics,
+                                keyHeight = metrics.pad.keyHeight,
                                 onDart = viewModel::addDart,
                                 onUndo = viewModel::undo
                             )
@@ -297,19 +343,42 @@ fun LiveMatchScreen(
 }
 
 @Composable
+private fun FollowCurrentPlayer(scrollState: ScrollState, currentIndex: Int, boardHeight: Dp) {
+    val density = LocalDensity.current
+    val viewport = scrollState.viewportSize
+    val furthest = scrollState.maxValue
+
+    LaunchedEffect(currentIndex, boardHeight, viewport, furthest) {
+        if (currentIndex < 0 || viewport == 0 || furthest == 0) return@LaunchedEffect
+
+        val step = with(density) { (boardHeight + BoardGap).toPx() }
+        val height = with(density) { boardHeight.toPx() }
+        val top = (currentIndex * step).roundToInt()
+        val bottom = top + height.roundToInt()
+
+        val target = when {
+            top < scrollState.value -> top
+            bottom > scrollState.value + viewport -> bottom - viewport
+            else -> return@LaunchedEffect
+        }
+
+        scrollState.animateScrollTo(target.coerceIn(0, furthest))
+    }
+}
+
+@Composable
 private fun ScoreboardRow(
     board: PlayerBoard,
     displayedRemaining: Int,
     showInFlag: Boolean,
-    metrics: LiveMatchMetrics
+    height: Dp
 ) {
     val active = board.isCurrentPlayer
-    val compact = metrics.compactBoards
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(metrics.boardHeight)
+            .height(height)
             .clip(CardShape)
             .background(if (active) SurfaceRaised else SurfaceCard)
             .border(
@@ -333,15 +402,11 @@ private fun ScoreboardRow(
         ) {
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 Text(
                     text = board.player.name,
-                    style = if (compact) {
-                        MaterialTheme.typography.titleMedium
-                    } else {
-                        MaterialTheme.typography.titleLarge
-                    },
+                    style = MaterialTheme.typography.titleLarge,
                     color = if (active) TextPrimary else TextSecondary,
                     maxLines = 1
                 )
@@ -364,15 +429,28 @@ private fun ScoreboardRow(
 
             Text(
                 text = displayedRemaining.toString(),
-                style = if (compact) {
-                    MaterialTheme.typography.displayMedium
-                } else {
-                    MaterialTheme.typography.displayLarge
-                },
+                style = MaterialTheme.typography.displayLarge,
                 color = if (active) ScoreActive else TextFaint
             )
         }
     }
+}
+
+@Composable
+private fun EdgeFade(modifier: Modifier, atTop: Boolean) {
+    val background = MaterialTheme.colorScheme.background
+    val colors = if (atTop) {
+        listOf(background, Color.Transparent)
+    } else {
+        listOf(Color.Transparent, background)
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(EdgeFadeHeight)
+            .background(Brush.verticalGradient(colors))
+    )
 }
 
 @Composable
@@ -509,13 +587,11 @@ private fun MessageLine(message: String?, tone: MessageTone, height: Dp) {
 private fun TurnTotalPad(
     typed: String,
     canUndo: Boolean,
-    metrics: LiveMatchMetrics,
+    keyHeight: Dp,
     onTyped: (String) -> Unit,
     onSubmit: (Int) -> Unit,
     onUndo: () -> Unit
 ) {
-    val keyHeight = metrics.keyHeight
-
     Column(
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = PadBottomPadding),
         verticalArrangement = Arrangement.spacedBy(PadGap)
@@ -566,13 +642,12 @@ private fun TurnTotalPad(
 @Composable
 private fun PerDartPad(
     canUndo: Boolean,
-    metrics: LiveMatchMetrics,
+    keyHeight: Dp,
     onDart: (Dart) -> Unit,
     onUndo: () -> Unit
 ) {
     var multiplier by remember { mutableStateOf(Multiplier.SINGLE) }
     val armed = multiplier != Multiplier.SINGLE
-    val keyHeight = metrics.keyHeight
 
     fun throwDart(dart: Dart) {
         onDart(dart)
@@ -620,15 +695,12 @@ private fun PerDartPad(
                 modifier = Modifier.weight(1f),
                 onClick = onUndo
             )
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(PadGap)) {
             listOf(Multiplier.DOUBLE, Multiplier.TRIPLE).forEach { option ->
                 val selected = option == multiplier
-                MultiplierChip(
+                MultiplierKey(
                     label = multiplierLabel(option),
                     selected = selected,
-                    height = metrics.chipHeight,
+                    height = keyHeight,
                     modifier = Modifier.weight(1f)
                 ) {
                     multiplier = if (selected) Multiplier.SINGLE else option
@@ -696,7 +768,7 @@ private fun Key(
 }
 
 @Composable
-private fun MultiplierChip(
+private fun MultiplierKey(
     label: String,
     selected: Boolean,
     height: Dp,
@@ -706,15 +778,16 @@ private fun MultiplierChip(
     Box(
         modifier = modifier
             .height(height)
-            .clip(CircleShape)
+            .clip(KeyShape)
             .background(if (selected) Green.copy(alpha = 0.18f) else SurfaceCard)
-            .border(1.dp, if (selected) Green else Stroke, CircleShape)
-            .clickable(onClick = onClick),
+            .border(1.dp, if (selected) Green else Stroke, KeyShape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
+            text = label,
+            style = MaterialTheme.typography.displaySmall.copy(fontSize = 24.sp, lineHeight = 24.sp),
             color = if (selected) GreenBright else TextSecondary,
             maxLines = 1,
             softWrap = false
@@ -891,9 +964,9 @@ private fun dartLabel(dart: Dart): String = when {
 }
 
 private fun multiplierLabel(multiplier: Multiplier): String = when (multiplier) {
-    Multiplier.SINGLE -> "Single"
-    Multiplier.DOUBLE -> "Double"
-    Multiplier.TRIPLE -> "Triple"
+    Multiplier.SINGLE -> "×1"
+    Multiplier.DOUBLE -> "×2"
+    Multiplier.TRIPLE -> "×3"
 }
 
 private fun matchTitle(match: Match): String {

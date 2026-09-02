@@ -55,7 +55,7 @@ fun MatchSettingsScreen(viewModel: LiveMatchViewModel, onBack: () -> Unit) {
                 description = "How darts are entered on the live screen. Changing it applies to " +
                     "the match already in progress."
             ) {
-                ScoreInputMode.entries.forEachIndexed { index, option ->
+                inputModeOrder.forEachIndexed { index, option ->
                     if (index > 0) HorizontalDivider(color = StrokeFaint)
                     RadioOptionRow(
                         title = inputModeTitle(option),
@@ -175,6 +175,8 @@ private fun RuleRow(label: String, value: String) {
         )
     }
 }
+
+private val inputModeOrder = listOf(ScoreInputMode.PER_DART, ScoreInputMode.TURN_TOTAL)
 
 private fun inputModeTitle(mode: ScoreInputMode): String = when (mode) {
     ScoreInputMode.TURN_TOTAL -> "Turn total"
