@@ -23,6 +23,10 @@
         <item quantity="one">%1$d won</item>
         <item quantity="other">%1$d won</item>
     </plurals>
+    <string name="delete_player_title">Delete %1$s?</string>
+    <string name="delete_player_detail">This can’t be undone.</string>
+    <string name="delete_player_keep">Keep player</string>
+    <string name="delete_player_confirm">Delete</string>
     <string name="player_fallback">Player %1$d</string>
     <string name="player_deleted">Deleted player</string>
 
@@ -31,7 +35,6 @@
     <string name="setup_selected">%1$d selected</string>
     <string name="setup_no_players">No players yet — add some on the Players screen first.</string>
     <string name="setup_order_hint">Order of selection is the throwing order.</string>
-    <string name="setup_game_mode">Game mode</string>
     <string name="setup_start_points">Start points</string>
     <string name="setup_custom">Custom</string>
     <string name="setup_out_rule">Out rule</string>
@@ -51,9 +54,6 @@
         <item quantity="other">%1$d leg wins</item>
     </plurals>
 
-    <string name="mode_x01">X01 (501/301)</string>
-    <string name="mode_cricket_soon">Cricket (coming soon)</string>
-    <string name="mode_split_soon">Split (coming soon)</string>
     <string name="mode_cricket">Cricket</string>
     <string name="mode_split">Split</string>
 
@@ -108,6 +108,7 @@
     <string name="message_not_in">%1$s is not in yet</string>
     <string name="message_scored">%1$s scored %2$d</string>
     <string name="message_undid_turn">Undid %1$s’s turn</string>
+    <string name="message_turn_total_impossible">%1$d can’t be scored with three darts</string>
     <string name="message_turn_total_range">A turn total must be between 0 and 180</string>
     <string name="error_match_not_found">Match not found</string>
     <string name="error_players_missing">This match’s players no longer exist</string>

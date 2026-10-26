@@ -27,7 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,12 +45,8 @@ import com.dinohud.dartx.model.OutRule
 import com.dinohud.dartx.model.SetLegMode
 import com.dinohud.dartx.resources.Res
 import com.dinohud.dartx.resources.leg_wins_count
-import com.dinohud.dartx.resources.mode_cricket_soon
-import com.dinohud.dartx.resources.mode_split_soon
-import com.dinohud.dartx.resources.mode_x01
 import com.dinohud.dartx.resources.set_wins_count
 import com.dinohud.dartx.resources.setup_custom
-import com.dinohud.dartx.resources.setup_game_mode
 import com.dinohud.dartx.resources.setup_in_rule
 import com.dinohud.dartx.resources.setup_legs
 import com.dinohud.dartx.resources.setup_no_players
@@ -91,14 +87,13 @@ fun MatchSetupScreen(
     val players by viewModel.players.collectAsStateWithLifecycle()
     val createdMatchId by viewModel.createdMatchId.collectAsStateWithLifecycle()
 
-    var selectedIds by remember { mutableStateOf(emptyList<Long>()) }
-    var gameMode by remember { mutableStateOf(GameMode.X01) }
-    var startPointsText by remember { mutableStateOf("501") }
-    var outRule by remember { mutableStateOf(OutRule.DOUBLE_OUT) }
-    var inRule by remember { mutableStateOf(InRule.STRAIGHT_IN) }
-    var setLegMode by remember { mutableStateOf(SetLegMode.FIRST_TO) }
-    var setsTarget by remember { mutableStateOf(1) }
-    var legsTarget by remember { mutableStateOf(3) }
+    var selectedIds by rememberSaveable { mutableStateOf(emptyList<Long>()) }
+    var startPointsText by rememberSaveable { mutableStateOf("501") }
+    var outRule by rememberSaveable { mutableStateOf(OutRule.DOUBLE_OUT) }
+    var inRule by rememberSaveable { mutableStateOf(InRule.STRAIGHT_IN) }
+    var setLegMode by rememberSaveable { mutableStateOf(SetLegMode.FIRST_TO) }
+    var setsTarget by rememberSaveable { mutableStateOf(1) }
+    var legsTarget by rememberSaveable { mutableStateOf(3) }
 
     LaunchedEffect(createdMatchId) {
         createdMatchId?.let { id ->
@@ -169,14 +164,6 @@ fun MatchSetupScreen(
                     )
                 }
 
-                ChoiceSection(
-                    title = stringResource(Res.string.setup_game_mode),
-                    options = GameMode.entries.toList(),
-                    selected = gameMode,
-                    label = { gameModeLabel(it) },
-                    onSelect = { gameMode = it },
-                    enabled = { it == GameMode.X01 }
-                )
 
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     SectionLabel(stringResource(Res.string.setup_start_points))
@@ -272,7 +259,7 @@ fun MatchSetupScreen(
                 startPoints?.let { points ->
                     viewModel.startMatch(
                         participantIds = selectedIds,
-                        gameMode = gameMode,
+                        gameMode = GameMode.X01,
                         startPoints = points,
                         outRule = outRule,
                         inRule = inRule,
@@ -396,15 +383,6 @@ private fun summaryText(mode: SetLegMode, sets: Int, legs: Int): String {
         pluralStringResource(Res.plurals.leg_wins_count, legWins, legWins)
     )
 }
-
-@Composable
-private fun gameModeLabel(mode: GameMode): String = stringResource(
-    when (mode) {
-        GameMode.X01 -> Res.string.mode_x01
-        GameMode.CRICKET -> Res.string.mode_cricket_soon
-        GameMode.SPLIT -> Res.string.mode_split_soon
-    }
-)
 
 @Composable
 private fun PresetKey(value: String, selected: Boolean, onClick: () -> Unit) {

@@ -38,6 +38,7 @@ class X01MatchController(
     private val remaining = order.associateWith { startPoints }.toMutableMap()
     private val isIn = order.associateWith { false }.toMutableMap()
 
+    private var setStartIndex = 0
     private var legStartIndex = 0
     private var turnIndex = 0
     private var legNumber = 1
@@ -53,6 +54,7 @@ class X01MatchController(
         val totalLegWins: Map<Long, Int>,
         val remaining: Map<Long, Int>,
         val isIn: Map<Long, Boolean>,
+        val setStartIndex: Int,
         val legStartIndex: Int,
         val turnIndex: Int,
         val legNumber: Int,
@@ -65,6 +67,7 @@ class X01MatchController(
         totalLegWins = totalLegWins.toMap(),
         remaining = remaining.toMap(),
         isIn = isIn.toMap(),
+        setStartIndex = setStartIndex,
         legStartIndex = legStartIndex,
         turnIndex = turnIndex,
         legNumber = legNumber,
@@ -77,6 +80,7 @@ class X01MatchController(
         totalLegWins.putAll(snapshot.totalLegWins)
         remaining.putAll(snapshot.remaining)
         isIn.putAll(snapshot.isIn)
+        setStartIndex = snapshot.setStartIndex
         legStartIndex = snapshot.legStartIndex
         turnIndex = snapshot.turnIndex
         legNumber = snapshot.legNumber
@@ -122,7 +126,12 @@ class X01MatchController(
             }
 
             order.forEach { remaining[it] = startPoints; isIn[it] = false }
-            legStartIndex = (legStartIndex + 1) % order.size
+            if (setWonBy != null) {
+                setStartIndex = (setStartIndex + 1) % order.size
+                legStartIndex = setStartIndex
+            } else {
+                legStartIndex = (legStartIndex + 1) % order.size
+            }
             turnIndex = legStartIndex
             legNumber += 1
         } else {

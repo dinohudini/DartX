@@ -8,6 +8,7 @@ import com.dinohud.dartx.data.local.Throw
 import com.dinohud.dartx.data.repository.MatchRepository
 import com.dinohud.dartx.data.repository.PlayerRepository
 import com.dinohud.dartx.model.Dart
+import com.dinohud.dartx.model.InRule
 import com.dinohud.dartx.model.x01.TurnResult
 import com.dinohud.dartx.model.x01.X01Engine
 import com.dinohud.dartx.model.x01.X01MatchController
@@ -21,6 +22,7 @@ import com.dinohud.dartx.resources.message_match_won
 import com.dinohud.dartx.resources.message_not_in
 import com.dinohud.dartx.resources.message_scored
 import com.dinohud.dartx.resources.message_set_won
+import com.dinohud.dartx.resources.message_turn_total_impossible
 import com.dinohud.dartx.resources.message_turn_total_range
 import com.dinohud.dartx.resources.message_undid_turn
 import com.dinohud.dartx.resources.player_fallback
@@ -62,7 +64,19 @@ data class LiveMatchUiState(
     val messageTone: MessageTone = MessageTone.NEUTRAL,
     val winner: Player? = null,
     val error: UiText? = null
-)
+) {
+    val padMode: ScoreInputMode
+        get() = padModeFor(inputMode, match, boards)
+}
+
+internal fun padModeFor(inputMode: ScoreInputMode, match: Match?, boards: List<PlayerBoard>): ScoreInputMode {
+    val currentNotIn = boards.any { it.isCurrentPlayer && !it.isIn }
+    return if (inputMode == ScoreInputMode.TURN_TOTAL && match?.inRule == InRule.DOUBLE_IN && currentNotIn) {
+        ScoreInputMode.PER_DART
+    } else {
+        inputMode
+    }
+}
 
 private data class MatchState(
     val controller: X01MatchController.Snapshot,
@@ -186,7 +200,8 @@ class LiveMatchViewModel(
         val rewriteMatch = restoredMatch.takeIf { it != match }
         match = restoredMatch
 
-        val restaged = if (_uiState.value.inputMode == ScoreInputMode.PER_DART) {
+        val boards = boards()
+        val restaged = if (padModeFor(_uiState.value.inputMode, restoredMatch, boards) == ScoreInputMode.PER_DART) {
             undone.darts.dropLast(1)
         } else {
             emptyList()
@@ -194,7 +209,7 @@ class LiveMatchViewModel(
 
         _uiState.update {
             it.copy(
-                boards = boards(),
+                boards = boards,
                 pendingDarts = restaged,
                 previewRemaining = previewOf(restaged),
                 canUndo = undoStack.isNotEmpty(),
@@ -250,10 +265,14 @@ class LiveMatchViewModel(
     fun submitTurnTotal(total: Int) {
         val controller = controller ?: return
         if (_uiState.value.winner != null) return
-        if (total !in 0..180) {
+        if (!X01Engine.isPossibleTurnTotal(total)) {
             _uiState.update {
                 it.copy(
-                    message = uiText(Res.string.message_turn_total_range),
+                    message = if (total in 0..180) {
+                        uiText(Res.string.message_turn_total_impossible, total)
+                    } else {
+                        uiText(Res.string.message_turn_total_range)
+                    },
                     messageTone = MessageTone.ALERT
                 )
             }

@@ -37,8 +37,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dinohud.dartx.data.local.Player
 import com.dinohud.dartx.resources.Res
 import com.dinohud.dartx.resources.action_delete_player
+import com.dinohud.dartx.resources.delete_player_confirm
+import com.dinohud.dartx.resources.delete_player_detail
+import com.dinohud.dartx.resources.delete_player_keep
+import com.dinohud.dartx.resources.delete_player_title
 import com.dinohud.dartx.resources.matches_count
 import com.dinohud.dartx.resources.players_add
 import com.dinohud.dartx.resources.players_empty_detail
@@ -68,6 +73,21 @@ fun PlayersScreen(
     viewModel: PlayerViewModel = koinViewModel()
 ) {
     val rows by viewModel.rows.collectAsStateWithLifecycle()
+    var pendingDelete by remember { mutableStateOf<Player?>(null) }
+
+    pendingDelete?.let { player ->
+        ConfirmDialog(
+            title = stringResource(Res.string.delete_player_title, player.name),
+            detail = stringResource(Res.string.delete_player_detail),
+            dismissLabel = stringResource(Res.string.delete_player_keep),
+            confirmLabel = stringResource(Res.string.delete_player_confirm),
+            onDismiss = { pendingDelete = null },
+            onConfirm = {
+                viewModel.deletePlayer(player)
+                pendingDelete = null
+            }
+        )
+    }
     var nameInput by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf(avatarColorOptions.first()) }
 
@@ -146,7 +166,7 @@ fun PlayersScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(rows, key = { it.player.id }) { row ->
-                        PlayerListRow(row = row, onDelete = { viewModel.deletePlayer(row.player) })
+                        PlayerListRow(row = row, onDelete = { pendingDelete = row.player })
                     }
                 }
             }

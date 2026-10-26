@@ -25,6 +25,10 @@
         <item quantity="few">%1$d pobjede</item>
         <item quantity="other">%1$d pobjeda</item>
     </plurals>
+    <string name="delete_player_title">Obrisati igrača %1$s?</string>
+    <string name="delete_player_detail">Ovo se ne može poništiti.</string>
+    <string name="delete_player_keep">Zadrži igrača</string>
+    <string name="delete_player_confirm">Obriši</string>
     <string name="player_fallback">Igrač %1$d</string>
     <string name="player_deleted">Obrisani igrač</string>
 
@@ -33,7 +37,6 @@
     <string name="setup_selected">Odabrano: %1$d</string>
     <string name="setup_no_players">Još nema igrača — prvo ih dodaj na ekranu Igrači.</string>
     <string name="setup_order_hint">Redoslijed odabira je redoslijed bacanja.</string>
-    <string name="setup_game_mode">Način igre</string>
     <string name="setup_start_points">Početni bodovi</string>
     <string name="setup_custom">Po želji</string>
     <string name="setup_out_rule">Završetak (out)</string>
@@ -55,9 +58,6 @@
         <item quantity="other">%1$d osvojenih legova</item>
     </plurals>
 
-    <string name="mode_x01">X01 (501/301)</string>
-    <string name="mode_cricket_soon">Cricket (uskoro)</string>
-    <string name="mode_split_soon">Split (uskoro)</string>
     <string name="mode_cricket">Cricket</string>
     <string name="mode_split">Split</string>
 
@@ -114,6 +114,7 @@
     <string name="message_not_in">%1$s još nije u igri</string>
     <string name="message_scored">%1$s ubacuje %2$d</string>
     <string name="message_undid_turn">Poništen potez: %1$s</string>
+    <string name="message_turn_total_impossible">%1$d nije moguće ubaciti s tri strelice</string>
     <string name="message_turn_total_range">Zbroj poteza mora biti između 0 i 180</string>
     <string name="error_match_not_found">Meč nije pronađen</string>
     <string name="error_players_missing">Igrači ovog meča više ne postoje</string>

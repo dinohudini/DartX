@@ -276,4 +276,85 @@ class X01MatchControllerTest {
         assertEquals(1, controller.legWinsFor(1L))
         assertEquals(1, controller.totalLegWinsFor(1L))
     }
+
+    private fun setsMatch() = X01MatchController(
+        playerIds = listOf(1L, 2L),
+        startPoints = 40,
+        outRule = OutRule.DOUBLE_OUT,
+        inRule = InRule.STRAIGHT_IN,
+        setLegMode = SetLegMode.FIRST_TO,
+        setsTarget = 2,
+        legsTarget = 2
+    )
+
+    private fun X01MatchController.checkoutBy(playerId: Long): X01TurnOutcome {
+        while (currentPlayerId != playerId) applyTurn(listOf(d(1, Multiplier.SINGLE)))
+        return applyTurn(listOf(d(20, Multiplier.DOUBLE)))
+    }
+
+    @Test
+    fun `legs alternate inside a set`() {
+        val controller = setsMatch()
+
+        assertEquals(1L, controller.currentPlayerId)
+        controller.checkoutBy(2L)
+
+        assertEquals(2L, controller.currentPlayerId)
+    }
+
+    @Test
+    fun `the player who did not start the last set starts the next one`() {
+        val controller = setsMatch()
+
+        controller.checkoutBy(1L)
+        val setWinning = controller.checkoutBy(1L)
+
+        assertEquals(1L, setWinning.setWonBy)
+        assertEquals(2L, controller.currentPlayerId)
+    }
+
+    @Test
+    fun `set starters keep alternating after an odd number of legs`() {
+        val controller = setsMatch()
+
+        controller.checkoutBy(1L)
+        controller.checkoutBy(2L)
+        val setWinning = controller.checkoutBy(1L)
+
+        assertEquals(1L, setWinning.setWonBy)
+        assertEquals(2L, controller.currentPlayerId)
+    }
+
+    @Test
+    fun `three players rotate the set starter through everyone`() {
+        val controller = X01MatchController(
+            playerIds = listOf(1L, 2L, 3L),
+            startPoints = 40,
+            outRule = OutRule.DOUBLE_OUT,
+            inRule = InRule.STRAIGHT_IN,
+            setLegMode = SetLegMode.FIRST_TO,
+            setsTarget = 3,
+            legsTarget = 1
+        )
+
+        controller.checkoutBy(1L)
+        assertEquals(2L, controller.currentPlayerId)
+        controller.checkoutBy(1L)
+        assertEquals(3L, controller.currentPlayerId)
+    }
+
+    @Test
+    fun `restoring the turn that won a set brings back the old starter`() {
+        val controller = setsMatch()
+
+        controller.checkoutBy(1L)
+        while (controller.currentPlayerId != 1L) controller.applyTurn(listOf(d(1, Multiplier.SINGLE)))
+        val before = controller.snapshot()
+        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
+        controller.restore(before)
+
+        assertEquals(1L, controller.currentPlayerId)
+        controller.applyTurn(listOf(d(20, Multiplier.DOUBLE)))
+        assertEquals(2L, controller.currentPlayerId)
+    }
 }

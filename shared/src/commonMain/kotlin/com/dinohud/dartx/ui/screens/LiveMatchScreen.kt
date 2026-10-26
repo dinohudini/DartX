@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +87,7 @@ import com.dinohud.dartx.resources.match_over_title
 import com.dinohud.dartx.resources.match_over_undo
 import com.dinohud.dartx.resources.match_over_view_stats
 import com.dinohud.dartx.resources.match_over_winner
+import com.dinohud.dartx.ui.KeepScreenOn
 import com.dinohud.dartx.ui.theme.Green
 import com.dinohud.dartx.ui.theme.GreenBright
 import com.dinohud.dartx.ui.theme.OnGreen
@@ -185,10 +187,12 @@ fun LiveMatchScreen(
     viewModel: LiveMatchViewModel = koinViewModel { parametersOf(matchId) }
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var typed by remember { mutableStateOf("") }
+    var typed by rememberSaveable { mutableStateOf("") }
     var confirmAbandon by remember { mutableStateOf(false) }
 
     val requestExit = { if (state.winner == null) confirmAbandon = true else onExit() }
+
+    KeepScreenOn()
 
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
@@ -252,7 +256,7 @@ fun LiveMatchScreen(
                 )
 
                 else -> {
-                    val perDart = state.inputMode == ScoreInputMode.PER_DART
+                    val perDart = state.padMode == ScoreInputMode.PER_DART
                     val metrics = metricsFor(available, state.boards.size, perDart)
                     val boardScroll = rememberScrollState()
 
@@ -299,7 +303,7 @@ fun LiveMatchScreen(
                             modifier = Modifier.padding(horizontal = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(StripGap)
                         ) {
-                            when (state.inputMode) {
+                            when (state.padMode) {
                                 ScoreInputMode.PER_DART -> TurnSlots(
                                     pendingDarts = state.pendingDarts,
                                     height = metrics.pad.slotHeight
@@ -321,7 +325,7 @@ fun LiveMatchScreen(
 
                         Spacer(modifier = Modifier.height(StripGap))
 
-                        when (state.inputMode) {
+                        when (state.padMode) {
                             ScoreInputMode.TURN_TOTAL -> TurnTotalPad(
                                 typed = typed,
                                 canUndo = state.canUndo,
@@ -360,9 +364,13 @@ fun LiveMatchScreen(
             }
 
             if (confirmAbandon && state.winner == null) {
-                AbandonMatchDialog(
-                    onKeepPlaying = { confirmAbandon = false },
-                    onAbandon = {
+                ConfirmDialog(
+                    title = stringResource(Res.string.abandon_title),
+                    detail = stringResource(Res.string.abandon_detail),
+                    dismissLabel = stringResource(Res.string.abandon_keep_playing),
+                    confirmLabel = stringResource(Res.string.abandon_confirm),
+                    onDismiss = { confirmAbandon = false },
+                    onConfirm = {
                         confirmAbandon = false
                         onExit()
                     }
@@ -627,7 +635,7 @@ private fun TurnTotalPad(
             Row(horizontalArrangement = Arrangement.spacedBy(PadGap)) {
                 row.forEach { digit ->
                     Key(label = digit, height = keyHeight, modifier = Modifier.weight(1f)) {
-                        if (typed.length < 3) onTyped(typed + digit)
+                        onTyped(appendDigit(typed, digit))
                     }
                 }
             }
@@ -642,7 +650,7 @@ private fun TurnTotalPad(
                 modifier = Modifier.weight(1f)
             ) { onTyped("") }
             Key(label = "0", height = keyHeight, modifier = Modifier.weight(1f)) {
-                if (typed.isNotEmpty() && typed.length < 3) onTyped(typed + "0")
+                onTyped(appendDigit(typed, "0"))
             }
             Key(
                 label = stringResource(Res.string.key_enter),
@@ -737,10 +745,10 @@ private fun PerDartPad(
     }
 }
 
-private enum class KeyTone { NEUTRAL, QUIET, PRIMARY }
+internal enum class KeyTone { NEUTRAL, QUIET, PRIMARY }
 
 @Composable
-private fun Key(
+internal fun Key(
     label: String,
     modifier: Modifier = Modifier,
     numeric: Boolean = true,
@@ -819,57 +827,6 @@ private fun MultiplierKey(
             maxLines = 1,
             softWrap = false
         )
-    }
-}
-
-@Composable
-private fun AbandonMatchDialog(onKeepPlaying: () -> Unit, onAbandon: () -> Unit) {
-    Dialog(onDismissRequest = onKeepPlaying) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(SurfaceRaised)
-                .border(1.dp, Stroke, RoundedCornerShape(24.dp))
-                .padding(start = 24.dp, end = 24.dp, top = 28.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = stringResource(Res.string.abandon_title).uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = RedBright
-                )
-                Text(
-                    text = stringResource(Res.string.abandon_detail),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Key(
-                    label = stringResource(Res.string.abandon_keep_playing),
-                    numeric = false,
-                    tone = KeyTone.PRIMARY,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onKeepPlaying
-                )
-                Key(
-                    label = stringResource(Res.string.abandon_confirm),
-                    numeric = false,
-                    tone = KeyTone.QUIET,
-                    height = 48.dp,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onAbandon
-                )
-            }
-        }
     }
 }
 
@@ -981,6 +938,12 @@ private fun MatchOverDialog(
             }
         }
     }
+}
+
+internal fun appendDigit(typed: String, digit: String): String = when {
+    typed == "0" -> digit
+    typed.length < 3 -> typed + digit
+    else -> typed
 }
 
 private fun dartLabel(dart: Dart): String = when {

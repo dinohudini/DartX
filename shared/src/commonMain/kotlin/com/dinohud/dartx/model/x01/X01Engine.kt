@@ -21,6 +21,15 @@ object X01Engine {
 
     const val NOMINAL_DARTS_PER_TURN = 3
 
+    private val dartScores: Set<Int> =
+        (0..20).toSet() + (1..20).map { it * 2 } + (1..20).map { it * 3 } + setOf(25, 50)
+
+    val possibleTurnTotals: Set<Int> = buildSet {
+        for (a in dartScores) for (b in dartScores) for (c in dartScores) add(a + b + c)
+    }
+
+    fun isPossibleTurnTotal(total: Int): Boolean = total in possibleTurnTotals
+
     fun applyTurn(
         start: TurnStartState,
         darts: List<Dart>,
@@ -105,7 +114,7 @@ object X01Engine {
         outRule: OutRule,
         inRule: InRule
     ): TurnResult {
-        require(total in 0..180) { "A turn total is 0-180" }
+        require(isPossibleTurnTotal(total)) { "$total cannot be scored with three darts" }
 
         val isInAfter = start.isPlayerIn || inRule == InRule.STRAIGHT_IN || total > 0
         if (!isInAfter) {

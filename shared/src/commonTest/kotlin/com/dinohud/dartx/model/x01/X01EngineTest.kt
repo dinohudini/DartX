@@ -5,10 +5,11 @@ import com.dinohud.dartx.model.InRule
 import com.dinohud.dartx.model.Multiplier
 import com.dinohud.dartx.model.OutRule
 import com.dinohud.dartx.model.ThrowStatus
+import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.test.Test
 
 class X01EngineTest {
 
@@ -303,5 +304,32 @@ class X01EngineTest {
                 OutRule.DOUBLE_OUT, InRule.DOUBLE_IN
             ).throwStatuses
         )
+    }
+
+    @Test
+    fun `exactly the nine known totals are impossible with three darts`() {
+        val impossible = (0..180).filterNot(X01Engine::isPossibleTurnTotal)
+
+        assertEquals(listOf(163, 166, 169, 172, 173, 175, 176, 178, 179), impossible)
+        assertFalse(X01Engine.isPossibleTurnTotal(181))
+        assertFalse(X01Engine.isPossibleTurnTotal(-1))
+    }
+
+    @Test
+    fun `an impossible turn total is rejected`() {
+        val start = TurnStartState(remaining = 501, isPlayerIn = true)
+
+        assertFailsWith<IllegalArgumentException> {
+            X01Engine.applyTurnTotal(start, 179, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN)
+        }
+    }
+
+    @Test
+    fun `a zero turn total is a valid turn`() {
+        val start = TurnStartState(remaining = 501, isPlayerIn = true)
+        val result = X01Engine.applyTurnTotal(start, 0, OutRule.DOUBLE_OUT, InRule.STRAIGHT_IN)
+
+        assertEquals(501, result.remainingAfter)
+        assertEquals(TurnResult.Outcome.NORMAL, result.outcome)
     }
 }
