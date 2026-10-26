@@ -1,0 +1,184 @@
+<resources>
+    <string name="action_back">Back</string>
+    <string name="action_delete_player">Delete %1$s</string>
+
+    <string name="home_play">PLAY</string>
+    <string name="home_players">Players</string>
+    <string name="home_statistics">Statistics</string>
+    <string name="home_history">Match history</string>
+
+    <string name="players_title">Players</string>
+    <string name="players_new">New player</string>
+    <string name="players_name_hint">Name</string>
+    <string name="players_add">Add player</string>
+    <string name="players_empty_title">No players yet</string>
+    <string name="players_empty_detail">Add one above to start a match.</string>
+    <string name="players_no_matches">No matches yet</string>
+    <string name="players_record">%1$s · %2$s</string>
+    <plurals name="matches_count">
+        <item quantity="one">%1$d match</item>
+        <item quantity="other">%1$d matches</item>
+    </plurals>
+    <plurals name="wins_count">
+        <item quantity="one">%1$d won</item>
+        <item quantity="other">%1$d won</item>
+    </plurals>
+    <string name="player_fallback">Player %1$d</string>
+    <string name="player_deleted">Deleted player</string>
+
+    <string name="setup_title">New match</string>
+    <string name="setup_players">Players</string>
+    <string name="setup_selected">%1$d selected</string>
+    <string name="setup_no_players">No players yet — add some on the Players screen first.</string>
+    <string name="setup_order_hint">Order of selection is the throwing order.</string>
+    <string name="setup_game_mode">Game mode</string>
+    <string name="setup_start_points">Start points</string>
+    <string name="setup_custom">Custom</string>
+    <string name="setup_out_rule">Out rule</string>
+    <string name="setup_in_rule">In rule</string>
+    <string name="setup_sets">Sets</string>
+    <string name="setup_legs">Legs</string>
+    <string name="setup_set_leg_mode">Set / leg mode</string>
+    <string name="setup_start">START GAME</string>
+    <string name="setup_summary">%1$s, %2$s — %3$s and %4$s needed.</string>
+    <string name="setup_summary_legs_per_set">%1$s per set</string>
+    <plurals name="set_wins_count">
+        <item quantity="one">%1$d set win</item>
+        <item quantity="other">%1$d set wins</item>
+    </plurals>
+    <plurals name="leg_wins_count">
+        <item quantity="one">%1$d leg win</item>
+        <item quantity="other">%1$d leg wins</item>
+    </plurals>
+
+    <string name="mode_x01">X01 (501/301)</string>
+    <string name="mode_cricket_soon">Cricket (coming soon)</string>
+    <string name="mode_split_soon">Split (coming soon)</string>
+    <string name="mode_cricket">Cricket</string>
+    <string name="mode_split">Split</string>
+
+    <string name="out_double">Double out</string>
+    <string name="out_master">Master out</string>
+    <string name="out_single">Single out</string>
+    <string name="in_straight">Straight in</string>
+    <string name="in_double">Double in</string>
+    <string name="set_leg_first_to">First to</string>
+    <string name="set_leg_best_of">Best of</string>
+    <string name="target_format">%1$s %2$s</string>
+    <plurals name="sets_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <plurals name="legs_count">
+        <item quantity="one">%1$d leg</item>
+        <item quantity="other">%1$d legs</item>
+    </plurals>
+
+    <string name="match_fallback_title">Match</string>
+    <string name="match_title_x01">%1$d · %2$s</string>
+    <string name="live_title">%1$d · %2$s · %3$s %4$d</string>
+    <string name="live_settings">Match settings</string>
+    <string name="live_board_record">Sets %1$d · Legs %2$d</string>
+    <string name="live_board_record_avg">Sets %1$d · Legs %2$d · Avg %3$s</string>
+    <string name="live_to_throw">To throw</string>
+    <string name="live_not_in">Not in</string>
+    <string name="live_turn_score">Turn score</string>
+    <string name="live_would_bust">would bust</string>
+    <string name="live_leaves">leaves %1$d</string>
+    <string name="key_clear">CLEAR</string>
+    <string name="key_enter">ENTER</string>
+    <string name="key_undo">UNDO</string>
+    <string name="key_undo_last_turn">UNDO LAST TURN</string>
+    <string name="abandon_title">Abandon match</string>
+    <string name="abandon_detail">Leave now and the match stays unfinished.</string>
+    <string name="abandon_keep_playing">Keep playing</string>
+    <string name="abandon_confirm">Abandon match</string>
+    <string name="match_over_title">Match over</string>
+    <string name="match_over_winner">%1$s wins</string>
+    <string name="match_over_sets">Sets</string>
+    <string name="match_over_legs">Legs</string>
+    <string name="match_over_done">Done</string>
+    <string name="match_over_undo">Undo</string>
+    <string name="match_over_view_stats">View stats</string>
+
+    <string name="message_match_won">%1$s wins the match!</string>
+    <string name="message_set_won">Set to %1$s</string>
+    <string name="message_leg_won">Leg to %1$s</string>
+    <string name="message_bust">Bust — %1$s scores nothing</string>
+    <string name="message_not_in">%1$s is not in yet</string>
+    <string name="message_scored">%1$s scored %2$d</string>
+    <string name="message_undid_turn">Undid %1$s’s turn</string>
+    <string name="message_turn_total_range">A turn total must be between 0 and 180</string>
+    <string name="error_match_not_found">Match not found</string>
+    <string name="error_players_missing">This match’s players no longer exist</string>
+
+    <string name="settings_title">Match settings</string>
+    <string name="settings_score_input">Score input</string>
+    <string name="settings_score_input_detail">How darts are entered on the live screen. Changing it applies to the match already in progress.</string>
+    <string name="settings_per_dart">Per dart</string>
+    <string name="settings_per_dart_detail">Detailed: every dart’s field, for full statistics.</string>
+    <string name="settings_turn_total">Turn total</string>
+    <string name="settings_turn_total_detail">Fast: type the whole turn’s score.</string>
+    <string name="settings_rules">Match rules</string>
+    <string name="settings_rules_detail">Chosen at setup and fixed for the whole match.</string>
+
+    <string name="history_title">Match history</string>
+    <string name="history_empty_title">No matches played yet</string>
+    <string name="history_empty_detail">Finish a match and it lands here.</string>
+    <string name="history_abandoned">Abandoned mid-match</string>
+    <string name="history_format_sets">%1$s · %2$s</string>
+    <string name="history_winner">%1$s won · %2$s</string>
+    <string name="history_date">%1$d %2$s %3$d, %4$s</string>
+    <string-array name="months_short">
+        <item>Jan</item>
+        <item>Feb</item>
+        <item>Mar</item>
+        <item>Apr</item>
+        <item>May</item>
+        <item>Jun</item>
+        <item>Jul</item>
+        <item>Aug</item>
+        <item>Sep</item>
+        <item>Oct</item>
+        <item>Nov</item>
+        <item>Dec</item>
+    </string-array>
+
+    <string name="statistics_title">Statistics</string>
+    <string name="statistics_empty_title">No players yet</string>
+    <string name="statistics_empty_detail">Add a player before there is anything to measure.</string>
+    <string name="match_stats_title">Match stats</string>
+    <string name="match_stats_missing">This match no longer exists.</string>
+    <string name="match_stats_unfinished_title">Statistics are kept for finished matches only</string>
+    <string name="match_stats_unfinished_detail">This match was abandoned before anyone won it.</string>
+    <string name="player_stats_missing">This player no longer exists.</string>
+    <string name="player_stats_empty_title">No finished matches yet</string>
+    <string name="player_stats_empty_detail">Statistics start counting once a match is won.</string>
+
+    <string name="stat_section_result">Result</string>
+    <string name="stat_outcome">Outcome</string>
+    <string name="stat_outcome_won">Won</string>
+    <string name="stat_outcome_lost">Lost</string>
+    <string name="stat_section_record">Record</string>
+    <string name="stat_matches_played">Matches played</string>
+    <string name="stat_matches_won">Matches won</string>
+    <string name="stat_win_rate">Win rate</string>
+    <string name="stat_legs_played">Legs played</string>
+    <string name="stat_legs_won">Legs won</string>
+    <string name="stat_leg_win_rate">Leg win rate</string>
+    <string name="stat_section_scoring">Scoring</string>
+    <string name="stat_points_scored">Total scored points</string>
+    <string name="stat_darts_thrown">Darts thrown</string>
+    <string name="stat_three_dart_average">3-dart average</string>
+    <string name="stat_first_9_average">First 9 average</string>
+    <string name="stat_best_leg_average">Best leg average</string>
+    <string name="stat_best_leg_darts">Best leg (darts)</string>
+    <string name="stat_highest_turn">Highest throw</string>
+    <string name="stat_highest_checkout">Highest checkout</string>
+    <string name="stat_section_accuracy">Accuracy</string>
+    <string name="stat_hit_rate_20_19">20/19 hit rate</string>
+    <string name="stat_hit_rate_60_57">60/57 hit rate</string>
+    <string name="stat_triple_rate">Triple rate</string>
+    <string name="stat_dart_average">Dart %1$d average</string>
+    <string name="stat_section_baskets">Scoring baskets</string>
+</resources>

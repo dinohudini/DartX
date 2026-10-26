@@ -1,0 +1,190 @@
+<resources>
+    <string name="action_back">Natrag</string>
+    <string name="action_delete_player">Obriši igrača %1$s</string>
+
+    <string name="home_play">IGRAJ</string>
+    <string name="home_players">Igrači</string>
+    <string name="home_statistics">Statistika</string>
+    <string name="home_history">Povijest mečeva</string>
+
+    <string name="players_title">Igrači</string>
+    <string name="players_new">Novi igrač</string>
+    <string name="players_name_hint">Ime</string>
+    <string name="players_add">Dodaj igrača</string>
+    <string name="players_empty_title">Još nema igrača</string>
+    <string name="players_empty_detail">Dodaj igrača iznad da možeš započeti meč.</string>
+    <string name="players_no_matches">Još nema mečeva</string>
+    <string name="players_record">%1$s · %2$s</string>
+    <plurals name="matches_count">
+        <item quantity="one">%1$d meč</item>
+        <item quantity="few">%1$d meča</item>
+        <item quantity="other">%1$d mečeva</item>
+    </plurals>
+    <plurals name="wins_count">
+        <item quantity="one">%1$d pobjeda</item>
+        <item quantity="few">%1$d pobjede</item>
+        <item quantity="other">%1$d pobjeda</item>
+    </plurals>
+    <string name="player_fallback">Igrač %1$d</string>
+    <string name="player_deleted">Obrisani igrač</string>
+
+    <string name="setup_title">Novi meč</string>
+    <string name="setup_players">Igrači</string>
+    <string name="setup_selected">Odabrano: %1$d</string>
+    <string name="setup_no_players">Još nema igrača — prvo ih dodaj na ekranu Igrači.</string>
+    <string name="setup_order_hint">Redoslijed odabira je redoslijed bacanja.</string>
+    <string name="setup_game_mode">Način igre</string>
+    <string name="setup_start_points">Početni bodovi</string>
+    <string name="setup_custom">Po želji</string>
+    <string name="setup_out_rule">Završetak (out)</string>
+    <string name="setup_in_rule">Početak (in)</string>
+    <string name="setup_sets">Setovi</string>
+    <string name="setup_legs">Legovi</string>
+    <string name="setup_set_leg_mode">Način setova / legova</string>
+    <string name="setup_start">ZAPOČNI IGRU</string>
+    <string name="setup_summary">%1$s, %2$s — potrebno: %3$s i %4$s.</string>
+    <string name="setup_summary_legs_per_set">%1$s po setu</string>
+    <plurals name="set_wins_count">
+        <item quantity="one">%1$d osvojen set</item>
+        <item quantity="few">%1$d osvojena seta</item>
+        <item quantity="other">%1$d osvojenih setova</item>
+    </plurals>
+    <plurals name="leg_wins_count">
+        <item quantity="one">%1$d osvojen leg</item>
+        <item quantity="few">%1$d osvojena lega</item>
+        <item quantity="other">%1$d osvojenih legova</item>
+    </plurals>
+
+    <string name="mode_x01">X01 (501/301)</string>
+    <string name="mode_cricket_soon">Cricket (uskoro)</string>
+    <string name="mode_split_soon">Split (uskoro)</string>
+    <string name="mode_cricket">Cricket</string>
+    <string name="mode_split">Split</string>
+
+    <string name="out_double">Double out</string>
+    <string name="out_master">Master out</string>
+    <string name="out_single">Single out</string>
+    <string name="in_straight">Straight in</string>
+    <string name="in_double">Double in</string>
+    <string name="set_leg_first_to">Prvi do</string>
+    <string name="set_leg_best_of">Najbolje od</string>
+    <string name="target_format">%1$s %2$s</string>
+    <plurals name="sets_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="few">%1$d seta</item>
+        <item quantity="other">%1$d setova</item>
+    </plurals>
+    <plurals name="legs_count">
+        <item quantity="one">%1$d leg</item>
+        <item quantity="few">%1$d lega</item>
+        <item quantity="other">%1$d legova</item>
+    </plurals>
+
+    <string name="match_fallback_title">Meč</string>
+    <string name="match_title_x01">%1$d · %2$s</string>
+    <string name="live_title">%1$d · %2$s · %3$s %4$d</string>
+    <string name="live_settings">Postavke meča</string>
+    <string name="live_board_record">Setovi %1$d · Legovi %2$d</string>
+    <string name="live_board_record_avg">Setovi %1$d · Legovi %2$d · Prosjek %3$s</string>
+    <string name="live_to_throw">Na redu</string>
+    <string name="live_not_in">Nije u igri</string>
+    <string name="live_turn_score">Bodovi poteza</string>
+    <string name="live_would_bust">bio bi bust</string>
+    <string name="live_leaves">ostaje %1$d</string>
+    <string name="key_clear">BRIŠI</string>
+    <string name="key_enter">UNESI</string>
+    <string name="key_undo">VRATI</string>
+    <string name="key_undo_last_turn">PONIŠTI ZADNJI POTEZ</string>
+    <string name="abandon_title">Napusti meč</string>
+    <string name="abandon_detail">Ako sada izađeš, meč ostaje nedovršen.</string>
+    <string name="abandon_keep_playing">Nastavi igru</string>
+    <string name="abandon_confirm">Napusti meč</string>
+    <string name="match_over_title">Kraj meča</string>
+    <string name="match_over_winner">Pobjednik: %1$s</string>
+    <string name="match_over_sets">Setovi</string>
+    <string name="match_over_legs">Legovi</string>
+    <string name="match_over_done">Gotovo</string>
+    <string name="match_over_undo">Poništi</string>
+    <string name="match_over_view_stats">Statistika</string>
+
+    <string name="message_match_won">%1$s osvaja meč!</string>
+    <string name="message_set_won">Set osvaja %1$s</string>
+    <string name="message_leg_won">Leg osvaja %1$s</string>
+    <string name="message_bust">Bust — %1$s ne dobiva bodove</string>
+    <string name="message_not_in">%1$s još nije u igri</string>
+    <string name="message_scored">%1$s ubacuje %2$d</string>
+    <string name="message_undid_turn">Poništen potez: %1$s</string>
+    <string name="message_turn_total_range">Zbroj poteza mora biti između 0 i 180</string>
+    <string name="error_match_not_found">Meč nije pronađen</string>
+    <string name="error_players_missing">Igrači ovog meča više ne postoje</string>
+
+    <string name="settings_title">Postavke meča</string>
+    <string name="settings_score_input">Unos rezultata</string>
+    <string name="settings_score_input_detail">Kako se strelice unose na ekranu igre. Promjena vrijedi i za meč koji je u tijeku.</string>
+    <string name="settings_per_dart">Po strelici</string>
+    <string name="settings_per_dart_detail">Detaljno: polje svake strelice, za punu statistiku.</string>
+    <string name="settings_turn_total">Zbroj poteza</string>
+    <string name="settings_turn_total_detail">Brzo: upiši ukupan rezultat poteza.</string>
+    <string name="settings_rules">Pravila meča</string>
+    <string name="settings_rules_detail">Odabrana pri postavljanju i ista za cijeli meč.</string>
+
+    <string name="history_title">Povijest mečeva</string>
+    <string name="history_empty_title">Još nema odigranih mečeva</string>
+    <string name="history_empty_detail">Završi meč i pojavit će se ovdje.</string>
+    <string name="history_abandoned">Napušten usred meča</string>
+    <string name="history_format_sets">%1$s · %2$s</string>
+    <string name="history_winner">Pobjednik: %1$s · %2$s</string>
+    <string name="history_date">%1$d. %2$s %3$d., %4$s</string>
+    <string-array name="months_short">
+        <item>sij</item>
+        <item>velj</item>
+        <item>ožu</item>
+        <item>tra</item>
+        <item>svi</item>
+        <item>lip</item>
+        <item>srp</item>
+        <item>kol</item>
+        <item>ruj</item>
+        <item>lis</item>
+        <item>stu</item>
+        <item>pro</item>
+    </string-array>
+
+    <string name="statistics_title">Statistika</string>
+    <string name="statistics_empty_title">Još nema igrača</string>
+    <string name="statistics_empty_detail">Prvo dodaj igrača — tek tada ima što mjeriti.</string>
+    <string name="match_stats_title">Statistika meča</string>
+    <string name="match_stats_missing">Ovaj meč više ne postoji.</string>
+    <string name="match_stats_unfinished_title">Statistika se vodi samo za završene mečeve</string>
+    <string name="match_stats_unfinished_detail">Meč je napušten prije nego što je itko pobijedio.</string>
+    <string name="player_stats_missing">Ovaj igrač više ne postoji.</string>
+    <string name="player_stats_empty_title">Još nema završenih mečeva</string>
+    <string name="player_stats_empty_detail">Statistika se počinje voditi kad netko pobijedi u meču.</string>
+
+    <string name="stat_section_result">Rezultat</string>
+    <string name="stat_outcome">Ishod</string>
+    <string name="stat_outcome_won">Pobjeda</string>
+    <string name="stat_outcome_lost">Poraz</string>
+    <string name="stat_section_record">Učinak</string>
+    <string name="stat_matches_played">Odigrani mečevi</string>
+    <string name="stat_matches_won">Osvojeni mečevi</string>
+    <string name="stat_win_rate">Postotak pobjeda</string>
+    <string name="stat_legs_played">Odigrani legovi</string>
+    <string name="stat_legs_won">Osvojeni legovi</string>
+    <string name="stat_leg_win_rate">Postotak osvojenih legova</string>
+    <string name="stat_section_scoring">Bodovanje</string>
+    <string name="stat_points_scored">Ukupno bodova</string>
+    <string name="stat_darts_thrown">Bačene strelice</string>
+    <string name="stat_three_dart_average">Prosjek (3 strelice)</string>
+    <string name="stat_first_9_average">Prosjek prvih 9</string>
+    <string name="stat_best_leg_average">Najbolji prosjek lega</string>
+    <string name="stat_best_leg_darts">Najbolji leg (strelice)</string>
+    <string name="stat_highest_turn">Najviši potez</string>
+    <string name="stat_highest_checkout">Najviši checkout</string>
+    <string name="stat_section_accuracy">Preciznost</string>
+    <string name="stat_hit_rate_20_19">Pogoci 20/19</string>
+    <string name="stat_hit_rate_60_57">Pogoci 60/57</string>
+    <string name="stat_triple_rate">Postotak triplova</string>
+    <string name="stat_dart_average">Prosjek %1$d. strelice</string>
+    <string name="stat_section_baskets">Visoki potezi</string>
+</resources>

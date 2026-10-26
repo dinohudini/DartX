@@ -3,11 +3,17 @@
 /local.properties
 /.idea/
 .DS_Store
-/build
+build/
+.kotlin/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
+
+# Release signing — never committed
+keystore.properties
+*.jks
+*.keystore
 
 # Local working docs and AI tooling — kept on disk, out of version control
 CLAUDE.md
