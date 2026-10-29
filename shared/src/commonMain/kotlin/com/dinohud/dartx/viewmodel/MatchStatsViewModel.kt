@@ -3,6 +3,7 @@ package com.dinohud.dartx.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dinohud.dartx.data.local.Match
+import com.dinohud.dartx.data.local.MatchWithParticipants
 import com.dinohud.dartx.data.local.Player
 import com.dinohud.dartx.data.local.Throw
 import com.dinohud.dartx.data.repository.MatchRepository
@@ -52,20 +53,21 @@ class MatchStatsViewModel(
         )
 }
 
-private fun toUiState(match: Match?, throws: List<Throw>, players: List<Player>): MatchStatsUiState {
-    if (match == null) return MatchStatsUiState(isLoading = false)
+private fun toUiState(record: MatchWithParticipants?, throws: List<Throw>, players: List<Player>): MatchStatsUiState {
+    if (record == null) return MatchStatsUiState(isLoading = false)
+    val match = record.match
     if (!X01MatchStats.countsForStats(match)) {
         return MatchStatsUiState(isLoading = false, match = match)
     }
 
     val playersById = players.associateBy(Player::id)
-    val stats = X01MatchStats.compute(match, throws)
+    val stats = X01MatchStats.compute(record, throws)
 
     return MatchStatsUiState(
         isLoading = false,
         match = match,
         isCounted = true,
-        players = match.participantIds.map { playerId ->
+        players = record.playerIds.map { playerId ->
             val player = playersById[playerId]
             PlayerStatsBlock(
                 playerId = playerId,

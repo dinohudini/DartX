@@ -19,8 +19,7 @@ class PadModeTest {
         inRule = inRule,
         setLegMode = SetLegMode.FIRST_TO,
         setsTarget = 1,
-        legsTarget = 3,
-        participantIds = listOf(1, 2)
+        legsTarget = 3
     )
 
     private fun board(id: Long, current: Boolean, isIn: Boolean) = PlayerBoard(

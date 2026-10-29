@@ -22,7 +22,7 @@ class MatchSetupViewModel(
     private val matchRepository: MatchRepository
 ) : ViewModel() {
 
-    val players: StateFlow<List<Player>> = playerRepository.allPlayers
+    val players: StateFlow<List<Player>> = playerRepository.activePlayers
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _createdMatchId = MutableStateFlow<Long?>(null)
@@ -48,9 +48,9 @@ class MatchSetupViewModel(
                     inRule = inRule,
                     setLegMode = setLegMode,
                     setsTarget = setsTarget,
-                    legsTarget = legsTarget,
-                    participantIds = participantIds
-                )
+                    legsTarget = legsTarget
+                ),
+                participantIds
             )
             _createdMatchId.value = id
         }

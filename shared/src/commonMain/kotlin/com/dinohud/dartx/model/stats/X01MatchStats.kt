@@ -1,6 +1,7 @@
 package com.dinohud.dartx.model.stats
 
 import com.dinohud.dartx.data.local.Match
+import com.dinohud.dartx.data.local.MatchWithParticipants
 import com.dinohud.dartx.data.local.Throw
 import com.dinohud.dartx.model.GameMode
 import com.dinohud.dartx.model.Multiplier
@@ -12,18 +13,19 @@ object X01MatchStats {
     fun countsForStats(match: Match): Boolean =
         match.winnerPlayerId != null && match.gameMode == GameMode.X01
 
-    fun compute(match: Match, throws: List<Throw>): Map<Long, PlayerMatchStats> {
-        val legsPlayed = match.legWins.sum()
+    fun compute(record: MatchWithParticipants, throws: List<Throw>): Map<Long, PlayerMatchStats> {
+        val match = record.match
+        val legsPlayed = record.participants.sumOf { it.legWins }
         val byPlayer = throws.groupBy { it.playerId }
 
-        return match.participantIds.withIndex().associate { (index, playerId) ->
-            playerId to PlayerMatchStats(
-                playerId = playerId,
+        return record.seats.associate { participant ->
+            participant.playerId to PlayerMatchStats(
+                playerId = participant.playerId,
                 matchId = match.id,
-                isWinner = playerId == match.winnerPlayerId,
+                isWinner = participant.playerId == match.winnerPlayerId,
                 legsPlayed = legsPlayed,
-                legsWon = match.legWins.getOrElse(index) { 0 },
-                totals = totalsFor(match, byPlayer[playerId].orEmpty())
+                legsWon = participant.legWins,
+                totals = totalsFor(match, byPlayer[participant.playerId].orEmpty())
             )
         }
     }

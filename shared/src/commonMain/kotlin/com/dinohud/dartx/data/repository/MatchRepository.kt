@@ -2,6 +2,8 @@ package com.dinohud.dartx.data.repository
 
 import com.dinohud.dartx.data.local.Match
 import com.dinohud.dartx.data.local.MatchDao
+import com.dinohud.dartx.data.local.MatchParticipant
+import com.dinohud.dartx.data.local.MatchWithParticipants
 import com.dinohud.dartx.data.local.Throw
 import com.dinohud.dartx.data.local.ThrowDao
 import kotlinx.coroutines.flow.Flow
@@ -11,15 +13,17 @@ class MatchRepository(
     private val throwDao: ThrowDao
 ) {
 
-    val allMatches: Flow<List<Match>> = matchDao.getAllMatches()
+    val allMatches: Flow<List<MatchWithParticipants>> = matchDao.getAllMatches()
 
-    suspend fun createMatch(match: Match): Long = matchDao.insert(match)
+    suspend fun createMatch(match: Match, playerIds: List<Long>): Long =
+        matchDao.insertWithParticipants(match, playerIds)
 
-    suspend fun updateMatch(match: Match) = matchDao.update(match)
+    suspend fun saveResult(match: Match, participants: List<MatchParticipant>) =
+        matchDao.updateWithParticipants(match, participants)
 
-    suspend fun getMatchById(matchId: Long): Match? = matchDao.getMatchById(matchId)
+    suspend fun getMatchById(matchId: Long): MatchWithParticipants? = matchDao.getMatchById(matchId)
 
-    fun observeMatchById(matchId: Long): Flow<Match?> = matchDao.observeMatchById(matchId)
+    fun observeMatchById(matchId: Long): Flow<MatchWithParticipants?> = matchDao.observeMatchById(matchId)
 
     suspend fun recordThrow(throwEntry: Throw): Long = throwDao.insert(throwEntry)
 

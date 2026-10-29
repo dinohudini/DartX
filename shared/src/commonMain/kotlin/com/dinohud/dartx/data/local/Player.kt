@@ -10,5 +10,6 @@ data class Player(
     val id: Long = 0,
     val name: String,
     val avatarColor: String,
-    val createdAt: Long = currentTimeMillis()
+    val createdAt: Long = currentTimeMillis(),
+    val archivedAt: Long? = null
 )

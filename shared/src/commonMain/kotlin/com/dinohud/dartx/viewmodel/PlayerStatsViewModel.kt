@@ -2,7 +2,7 @@ package com.dinohud.dartx.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dinohud.dartx.data.local.Match
+import com.dinohud.dartx.data.local.MatchWithParticipants
 import com.dinohud.dartx.data.local.Player
 import com.dinohud.dartx.data.local.Throw
 import com.dinohud.dartx.data.repository.MatchRepository
@@ -50,7 +50,7 @@ class PlayerStatsViewModel(
 
 private fun toUiState(
     playerId: Long,
-    matches: List<Match>,
+    matches: List<MatchWithParticipants>,
     throws: List<Throw>,
     players: List<Player>
 ): PlayerStatsUiState {
@@ -58,9 +58,9 @@ private fun toUiState(
     val throwsByMatch = throws.groupBy { it.matchId }
 
     val perMatch = matches
-        .filter { X01MatchStats.countsForStats(it) && playerId in it.participantIds }
-        .mapNotNull { match ->
-            X01MatchStats.compute(match, throwsByMatch[match.id].orEmpty())[playerId]
+        .filter { X01MatchStats.countsForStats(it.match) && playerId in it.playerIds }
+        .mapNotNull { record ->
+            X01MatchStats.compute(record, throwsByMatch[record.match.id].orEmpty())[playerId]
         }
 
     val overall = PlayerOverallStats.aggregate(playerId, perMatch)

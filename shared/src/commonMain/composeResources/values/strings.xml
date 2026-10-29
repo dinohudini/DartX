@@ -24,7 +24,7 @@
         <item quantity="other">%1$d won</item>
     </plurals>
     <string name="delete_player_title">Delete %1$s?</string>
-    <string name="delete_player_detail">This can’t be undone.</string>
+    <string name="delete_player_detail">They leave the player list, but their matches and stats stay in history.</string>
     <string name="delete_player_keep">Keep player</string>
     <string name="delete_player_confirm">Delete</string>
     <string name="player_fallback">Player %1$d</string>

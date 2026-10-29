@@ -9,8 +9,8 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlin.coroutines.CoroutineContext
 
 @Database(
-    entities = [Player::class, Match::class, Throw::class],
-    version = 4,
+    entities = [Player::class, Match::class, MatchParticipant::class, Throw::class],
+    version = 1,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

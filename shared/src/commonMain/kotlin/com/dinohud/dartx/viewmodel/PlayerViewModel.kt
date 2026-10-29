@@ -23,17 +23,17 @@ class PlayerViewModel(
     matchRepository: MatchRepository
 ) : ViewModel() {
 
-    val players: StateFlow<List<Player>> = repository.allPlayers
+    val players: StateFlow<List<Player>> = repository.activePlayers
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val rows: StateFlow<List<PlayerRow>> =
-        combine(repository.allPlayers, matchRepository.allMatches) { players, matches ->
-            val counted = matches.filter(X01MatchStats::countsForStats)
+        combine(repository.activePlayers, matchRepository.allMatches) { players, matches ->
+            val counted = matches.filter { X01MatchStats.countsForStats(it.match) }
             players.map { player ->
                 PlayerRow(
                     player = player,
-                    matchesPlayed = counted.count { player.id in it.participantIds },
-                    matchesWon = counted.count { it.winnerPlayerId == player.id }
+                    matchesPlayed = counted.count { player.id in it.playerIds },
+                    matchesWon = counted.count { it.match.winnerPlayerId == player.id }
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -46,9 +46,9 @@ class PlayerViewModel(
         }
     }
 
-    fun deletePlayer(player: Player) {
+    fun archivePlayer(player: Player) {
         viewModelScope.launch {
-            repository.deletePlayer(player)
+            repository.archivePlayer(player)
         }
     }
 }

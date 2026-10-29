@@ -3,6 +3,7 @@ package com.dinohud.dartx.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dinohud.dartx.data.local.Match
+import com.dinohud.dartx.data.local.MatchParticipant
 import com.dinohud.dartx.data.local.Player
 import com.dinohud.dartx.data.local.Throw
 import com.dinohud.dartx.data.repository.MatchRepository
@@ -83,7 +84,8 @@ private data class MatchState(
     val pointsScored: Map<Long, Int>,
     val dartsThrown: Map<Long, Int>,
     val turnNumbers: Map<Long, Int>,
-    val match: Match
+    val match: Match,
+    val participants: List<MatchParticipant>
 )
 
 private data class CommittedTurn(
@@ -109,6 +111,7 @@ class LiveMatchViewModel(
 
     private var controller: X01MatchController? = null
     private var match: Match? = null
+    private var participants: List<MatchParticipant> = emptyList()
     private var players: List<Player> = emptyList()
 
     private val turnNumbers = mutableMapOf<Long, Int>()
@@ -125,13 +128,15 @@ class LiveMatchViewModel(
     }
 
     private suspend fun load() {
-        val loaded = matchRepository.getMatchById(matchId)
-        if (loaded == null) {
+        val record = matchRepository.getMatchById(matchId)
+        if (record == null) {
             _uiState.update { it.copy(isLoading = false, error = uiText(Res.string.error_match_not_found)) }
             return
         }
+        val loaded = record.match
         match = loaded
-        players = loaded.participantIds.mapNotNull { playerRepository.getPlayerById(it) }
+        participants = record.seats
+        players = record.playerIds.mapNotNull { playerRepository.getPlayerById(it) }
 
         if (players.size < 2) {
             _uiState.update {
@@ -197,8 +202,10 @@ class LiveMatchViewModel(
         turnNumbers.replaceWith(undone.state.turnNumbers)
 
         val restoredMatch = undone.state.match
-        val rewriteMatch = restoredMatch.takeIf { it != match }
+        val restoredParticipants = undone.state.participants
+        val rewriteResult = restoredMatch != match || restoredParticipants != participants
         match = restoredMatch
+        participants = restoredParticipants
 
         val boards = boards()
         val restaged = if (padModeFor(_uiState.value.inputMode, restoredMatch, boards) == ScoreInputMode.PER_DART) {
@@ -223,7 +230,7 @@ class LiveMatchViewModel(
             withContext(NonCancellable) {
                 writeLock.withLock {
                     matchRepository.deleteTurn(matchId, undone.playerId, undone.turnNumber)
-                    rewriteMatch?.let { matchRepository.updateMatch(it) }
+                    if (rewriteResult) matchRepository.saveResult(restoredMatch, restoredParticipants)
                 }
             }
         }
@@ -251,6 +258,7 @@ class LiveMatchViewModel(
                 matchId = matchId,
                 playerId = outcome.playerId,
                 turnNumber = turnNumber,
+                dartIndex = index,
                 fieldValue = dart.fieldValue,
                 multiplier = dart.multiplier,
                 score = dart.score,
@@ -288,6 +296,7 @@ class LiveMatchViewModel(
             matchId = matchId,
             playerId = outcome.playerId,
             turnNumber = turnNumber,
+            dartIndex = 0,
             fieldValue = null,
             multiplier = null,
             score = total,
@@ -323,12 +332,14 @@ class LiveMatchViewModel(
                     rows.forEach { matchRepository.recordThrow(it) }
                     if (winner != null) {
                         match?.let { m ->
-                            val completed = withFinalScore(m).copy(
+                            val completed = m.copy(
                                 winnerPlayerId = winner.id,
                                 completedAt = currentTimeMillis()
                             )
-                            matchRepository.updateMatch(completed)
+                            val scored = finalScores()
+                            matchRepository.saveResult(completed, scored)
                             match = completed
+                            participants = scored
                         }
                     }
                 }
@@ -336,13 +347,16 @@ class LiveMatchViewModel(
         }
     }
 
-    private fun withFinalScore(match: Match): Match {
-        val controller = controller ?: return match
+    private fun finalScores(): List<MatchParticipant> {
+        val controller = controller ?: return participants
         val playing = players.map { it.id }.toSet()
-        return match.copy(
-            setWins = match.participantIds.map { if (it in playing) controller.setWinsFor(it) else 0 },
-            legWins = match.participantIds.map { if (it in playing) controller.totalLegWinsFor(it) else 0 }
-        )
+        return participants.map {
+            if (it.playerId in playing) {
+                it.copy(setWins = controller.setWinsFor(it.playerId), legWins = controller.totalLegWinsFor(it.playerId))
+            } else {
+                it
+            }
+        }
     }
 
     private fun toneFor(outcome: X01TurnOutcome): MessageTone = when {
@@ -373,7 +387,8 @@ class LiveMatchViewModel(
             pointsScored = pointsScored.toMap(),
             dartsThrown = dartsThrown.toMap(),
             turnNumbers = turnNumbers.toMap(),
-            match = match
+            match = match,
+            participants = participants
         )
     }
 

@@ -11,20 +11,6 @@ import com.dinohud.dartx.model.ThrowStatus
 class Converters {
 
     @TypeConverter
-    fun fromParticipantIds(ids: List<Long>): String = ids.joinToString(",")
-
-    @TypeConverter
-    fun toParticipantIds(value: String): List<Long> =
-        if (value.isEmpty()) emptyList() else value.split(",").map { it.toLong() }
-
-    @TypeConverter
-    fun fromScores(scores: List<Int>): String = scores.joinToString(",")
-
-    @TypeConverter
-    fun toScores(value: String): List<Int> =
-        if (value.isEmpty()) emptyList() else value.split(",").map { it.toInt() }
-
-    @TypeConverter
     fun fromGameMode(mode: GameMode): String = mode.name
 
     @TypeConverter

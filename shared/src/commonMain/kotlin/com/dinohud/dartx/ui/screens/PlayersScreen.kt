@@ -83,7 +83,7 @@ fun PlayersScreen(
             confirmLabel = stringResource(Res.string.delete_player_confirm),
             onDismiss = { pendingDelete = null },
             onConfirm = {
-                viewModel.deletePlayer(player)
+                viewModel.archivePlayer(player)
                 pendingDelete = null
             }
         )

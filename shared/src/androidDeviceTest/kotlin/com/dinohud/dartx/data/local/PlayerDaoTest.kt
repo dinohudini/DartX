@@ -35,26 +35,26 @@ class PlayerDaoTest {
     }
 
     @Test
-    fun insertPlayer_appearsInAllPlayers() = runBlocking {
+    fun insertPlayer_appearsInActivePlayers() = runBlocking {
         val player = Player(name = "Marko", avatarColor = "#FF5733")
 
         playerDao.insert(player)
 
-        val players = playerDao.getAllPlayers().first()
+        val players = playerDao.getActivePlayers().first()
         assertEquals(1, players.size)
         assertEquals("Marko", players[0].name)
     }
 
     @Test
-    fun deletePlayer_removesFromAllPlayers() = runBlocking {
-        val player = Player(name = "Ivana", avatarColor = "#33A1FF")
-        val id = playerDao.insert(player)
-        val inserted = playerDao.getPlayerById(id)!!
+    fun archivePlayer_leavesActivePlayersButStaysInAllPlayers() = runBlocking {
+        val id = playerDao.insert(Player(name = "Ivana", avatarColor = "#33A1FF"))
 
-        playerDao.delete(inserted)
+        playerDao.archive(id, archivedAt = 1_000L)
 
-        val players = playerDao.getAllPlayers().first()
-        assertTrue(players.isEmpty())
+        assertTrue(playerDao.getActivePlayers().first().isEmpty())
+        val all = playerDao.getAllPlayers().first()
+        assertEquals(listOf("Ivana"), all.map { it.name })
+        assertEquals(1_000L, all[0].archivedAt)
     }
 
     @Test

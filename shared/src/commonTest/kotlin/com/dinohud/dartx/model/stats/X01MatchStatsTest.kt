@@ -1,6 +1,8 @@
 package com.dinohud.dartx.model.stats
 
 import com.dinohud.dartx.data.local.Match
+import com.dinohud.dartx.data.local.MatchParticipant
+import com.dinohud.dartx.data.local.MatchWithParticipants
 import com.dinohud.dartx.data.local.Throw
 import com.dinohud.dartx.model.Dart
 import com.dinohud.dartx.model.GameMode
@@ -24,19 +26,27 @@ private fun match(
     legWins: List<Int> = listOf(1, 0),
     winnerPlayerId: Long? = PLAYER,
     gameMode: GameMode = GameMode.X01
-) = Match(
-    id = MATCH_ID,
-    gameMode = gameMode,
-    startPoints = startPoints,
-    outRule = OutRule.DOUBLE_OUT,
-    inRule = InRule.STRAIGHT_IN,
-    setLegMode = SetLegMode.FIRST_TO,
-    setsTarget = 1,
-    legsTarget = legWins.max(),
-    participantIds = listOf(PLAYER, OPPONENT),
-    setWins = listOf(1, 0),
-    legWins = legWins,
-    winnerPlayerId = winnerPlayerId
+) = MatchWithParticipants(
+    match = Match(
+        id = MATCH_ID,
+        gameMode = gameMode,
+        startPoints = startPoints,
+        outRule = OutRule.DOUBLE_OUT,
+        inRule = InRule.STRAIGHT_IN,
+        setLegMode = SetLegMode.FIRST_TO,
+        setsTarget = 1,
+        legsTarget = legWins.max(),
+        winnerPlayerId = winnerPlayerId
+    ),
+    participants = listOf(PLAYER, OPPONENT).mapIndexed { seat, playerId ->
+        MatchParticipant(
+            matchId = MATCH_ID,
+            playerId = playerId,
+            seat = seat,
+            setWins = if (playerId == winnerPlayerId) 1 else 0,
+            legWins = legWins[seat]
+        )
+    }
 )
 
 private fun d(value: Int, mult: Multiplier = Multiplier.SINGLE) = Dart(value, mult)
@@ -47,28 +57,31 @@ private class ThrowLog(private val playerId: Long = PLAYER) {
 
     fun turn(leg: Int, vararg darts: Dart, status: ThrowStatus = ThrowStatus.COUNTED): ThrowLog {
         turnNumber += 1
-        darts.forEach { dart -> rows += row(leg, dart.fieldValue, dart.multiplier, dart.score, status) }
+        darts.forEachIndexed { index, dart ->
+            rows += row(leg, index, dart.fieldValue, dart.multiplier, dart.score, status)
+        }
         return this
     }
 
     fun mixedTurn(leg: Int, vararg darts: Pair<Dart, ThrowStatus>): ThrowLog {
         turnNumber += 1
-        darts.forEach { (dart, status) ->
-            rows += row(leg, dart.fieldValue, dart.multiplier, dart.score, status)
+        darts.forEachIndexed { index, (dart, status) ->
+            rows += row(leg, index, dart.fieldValue, dart.multiplier, dart.score, status)
         }
         return this
     }
 
     fun total(leg: Int, score: Int, status: ThrowStatus = ThrowStatus.COUNTED): ThrowLog {
         turnNumber += 1
-        rows += row(leg, null, null, score, status)
+        rows += row(leg, 0, null, null, score, status)
         return this
     }
 
-    private fun row(leg: Int, field: Int?, mult: Multiplier?, score: Int, status: ThrowStatus) = Throw(
+    private fun row(leg: Int, dartIndex: Int, field: Int?, mult: Multiplier?, score: Int, status: ThrowStatus) = Throw(
         matchId = MATCH_ID,
         playerId = playerId,
         turnNumber = turnNumber,
+        dartIndex = dartIndex,
         fieldValue = field,
         multiplier = mult,
         score = score,
@@ -79,7 +92,7 @@ private class ThrowLog(private val playerId: Long = PLAYER) {
 
 class X01MatchStatsTest {
 
-    private fun totalsOf(match: Match, log: ThrowLog): ScoringTotals =
+    private fun totalsOf(match: MatchWithParticipants, log: ThrowLog): ScoringTotals =
         X01MatchStats.compute(match, log.rows).getValue(PLAYER).totals
 
     @Test
@@ -111,7 +124,7 @@ class X01MatchStatsTest {
 
         val totals = totalsOf(match, log)
 
-        assertEquals(match.startPoints, totals.pointsScored)
+        assertEquals(match.match.startPoints, totals.pointsScored)
         assertEquals(7, totals.bestLegDarts)
     }
 
@@ -296,11 +309,23 @@ class X01MatchStatsTest {
     }
 
     @Test
+    fun `participants are read by seat and not by the order the rows arrive in`() {
+        val record = match(startPoints = 100, legWins = listOf(1, 0))
+        val shuffled = record.copy(participants = record.participants.reversed())
+
+        val stats = X01MatchStats.compute(shuffled, ThrowLog().total(1, 100).rows)
+
+        assertEquals(listOf(PLAYER, OPPONENT), shuffled.playerIds)
+        assertEquals(1, stats.getValue(PLAYER).legsWon)
+        assertEquals(0, stats.getValue(OPPONENT).legsWon)
+    }
+
+    @Test
     fun `only finished X01 matches count towards statistics`() {
-        assertTrue(X01MatchStats.countsForStats(match(startPoints = 501)))
-        assertFalse(X01MatchStats.countsForStats(match(startPoints = 501, winnerPlayerId = null)))
+        assertTrue(X01MatchStats.countsForStats(match(startPoints = 501).match))
+        assertFalse(X01MatchStats.countsForStats(match(startPoints = 501, winnerPlayerId = null).match))
         assertFalse(
-            X01MatchStats.countsForStats(match(startPoints = 501, gameMode = GameMode.CRICKET))
+            X01MatchStats.countsForStats(match(startPoints = 501, gameMode = GameMode.CRICKET).match)
         )
     }
 }

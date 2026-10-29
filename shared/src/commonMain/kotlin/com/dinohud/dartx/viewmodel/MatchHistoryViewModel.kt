@@ -3,6 +3,7 @@ package com.dinohud.dartx.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dinohud.dartx.data.local.Match
+import com.dinohud.dartx.data.local.MatchWithParticipants
 import com.dinohud.dartx.data.local.Player
 import com.dinohud.dartx.data.repository.MatchRepository
 import com.dinohud.dartx.data.repository.PlayerRepository
@@ -51,16 +52,18 @@ class MatchHistoryViewModel(
             )
 }
 
-private fun toEntry(match: Match, playersById: Map<Long, Player>): MatchHistoryEntry {
-    val participants = match.participantIds.mapIndexed { index, playerId ->
-        val player = playersById[playerId]
+private fun toEntry(record: MatchWithParticipants, playersById: Map<Long, Player>): MatchHistoryEntry {
+    val match = record.match
+    val isFinished = match.winnerPlayerId != null
+    val participants = record.seats.map { participant ->
+        val player = playersById[participant.playerId]
         HistoryParticipant(
-            playerId = playerId,
+            playerId = participant.playerId,
             name = player?.name,
             avatarColor = player?.avatarColor,
-            setWins = match.setWins.getOrNull(index),
-            legWins = match.legWins.getOrNull(index),
-            isWinner = playerId == match.winnerPlayerId
+            setWins = participant.setWins.takeIf { isFinished },
+            legWins = participant.legWins.takeIf { isFinished },
+            isWinner = participant.playerId == match.winnerPlayerId
         )
     }
     return MatchHistoryEntry(match = match, participants = participants)

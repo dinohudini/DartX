@@ -1,7 +1,6 @@
 package com.dinohud.dartx.data.local
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
@@ -12,8 +11,11 @@ interface PlayerDao {
     @Insert
     suspend fun insert(player: Player): Long
 
-    @Delete
-    suspend fun delete(player: Player)
+    @Query("UPDATE players SET archivedAt = :archivedAt WHERE id = :playerId")
+    suspend fun archive(playerId: Long, archivedAt: Long)
+
+    @Query("SELECT * FROM players WHERE archivedAt IS NULL ORDER BY name ASC")
+    fun getActivePlayers(): Flow<List<Player>>
 
     @Query("SELECT * FROM players ORDER BY name ASC")
     fun getAllPlayers(): Flow<List<Player>>

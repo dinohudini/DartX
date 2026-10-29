@@ -16,9 +16,9 @@ interface ThrowDao {
     )
     suspend fun deleteTurn(matchId: Long, playerId: Long, turnNumber: Int)
 
-    @Query("SELECT * FROM throws WHERE matchId = :matchId ORDER BY turnNumber ASC, id ASC")
+    @Query("SELECT * FROM throws WHERE matchId = :matchId ORDER BY turnNumber ASC, dartIndex ASC")
     fun getThrowsForMatch(matchId: Long): Flow<List<Throw>>
 
-    @Query("SELECT * FROM throws WHERE playerId = :playerId ORDER BY matchId ASC, turnNumber ASC, id ASC")
+    @Query("SELECT * FROM throws WHERE playerId = :playerId ORDER BY matchId ASC, turnNumber ASC, dartIndex ASC")
     fun getThrowsForPlayer(playerId: Long): Flow<List<Throw>>
 }
