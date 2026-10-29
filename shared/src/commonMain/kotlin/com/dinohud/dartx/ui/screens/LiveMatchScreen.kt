@@ -128,9 +128,9 @@ private val EdgeFadeHeight = 24.dp
 private val MinCardHeight = 80.dp
 private val MaxCardHeight = 100.dp
 private const val PadKeyRows = 5
-private const val CardsInZone = 2
+private const val MinCardsInZone = 2
 
-private data class PadSizes(
+internal data class PadSizes(
     val slotHeight: Dp,
     val displayHeight: Dp,
     val messageHeight: Dp,
@@ -140,7 +140,7 @@ private data class PadSizes(
         get() = keyHeight * PadKeyRows + PadGap * (PadKeyRows - 1) + PadBottomPadding
 
     fun stripHeight(perDart: Boolean): Dp =
-        (if (perDart) slotHeight else displayHeight) + StripGap + messageHeight + ZoneGap
+        (if (perDart) slotHeight else displayHeight) + StripGap + messageHeight + StripGap + ZoneGap
 }
 
 private val PadLadder = listOf(
@@ -149,26 +149,28 @@ private val PadLadder = listOf(
     PadSizes(46.dp, 58.dp, 30.dp, 42.dp)
 )
 
-private data class LiveMatchMetrics(
+internal data class LiveMatchMetrics(
     val pad: PadSizes,
     val cardHeight: Dp,
     val zoneHeight: Dp
 )
 
-private fun cardSpan(count: Int, card: Dp): Dp = card * count + BoardGap * (count - 1)
+internal fun cardSpan(count: Int, card: Dp): Dp = card * count + BoardGap * (count - 1)
 
 private fun boardsBudget(available: Dp, pad: PadSizes, perDart: Boolean): Dp =
     available - pad.height - pad.stripHeight(perDart)
 
-private fun metricsFor(available: Dp, boardCount: Int, perDart: Boolean): LiveMatchMetrics {
+internal fun metricsFor(available: Dp, boardCount: Int, perDart: Boolean): LiveMatchMetrics {
     val pad = PadLadder.firstOrNull {
-        boardsBudget(available, it, perDart) >= cardSpan(CardsInZone, MinCardHeight)
+        boardsBudget(available, it, perDart) >= cardSpan(MinCardsInZone, MinCardHeight)
     } ?: PadLadder.last()
 
     val budget = boardsBudget(available, pad, perDart)
-    val fair = (budget - BoardGap * (CardsInZone - 1)) / CardsInZone
+    val capacity = ((budget + BoardGap) / (MinCardHeight + BoardGap)).toInt().coerceAtLeast(MinCardsInZone)
+    val shown = boardCount.coerceIn(1, capacity)
+    val slots = shown.coerceAtLeast(MinCardsInZone)
+    val fair = (budget - BoardGap * (slots - 1)) / slots
     val card = Dp(floor(fair.value)).coerceIn(MinCardHeight, MaxCardHeight)
-    val shown = boardCount.coerceIn(1, CardsInZone)
 
     return LiveMatchMetrics(
         pad = pad,
